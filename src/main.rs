@@ -28,15 +28,22 @@ use vulkano::framebuffer::Subpass;
 use vulkano::image::Dimensions;
 use vulkano::image::StorageImage;
 use vulkano::instance::Instance;
-use vulkano::instance::InstanceExtensions;
+
 use vulkano::instance::PhysicalDevice;
 use vulkano::pipeline::GraphicsPipeline;
 use vulkano::pipeline::viewport::Viewport;
 use vulkano::sync::GpuFuture;
 
+use vulkano_win::VkSurfaceBuild;
+use winit::EventsLoop;
+use winit::WindowBuilder;
+
+
 fn main() {
-    let instance = Instance::new(None, &InstanceExtensions::none(), None)
-        .expect("failed to create instance");
+    let instance = {
+        let extensions = vulkano_win::required_extensions();
+        Instance::new(None, &extensions, None).expect("failed to create Vulkan instance")
+    };
 
     let physical = PhysicalDevice::enumerate(&instance).next().expect("no device available");
 
@@ -147,4 +154,16 @@ fn main() {
     let buffer_content = buf.read().unwrap();
     let image = ImageBuffer::<Rgba<u8>, _>::from_raw(1024, 1024, &buffer_content[..]).unwrap();
     image.save("image.png").unwrap();
+
+
+    let mut events_loop = EventsLoop::new();
+    let surface = WindowBuilder::new().build_vk_surface(&events_loop, instance.clone()).unwrap();
+    events_loop.run_forever(|event| {
+        match event {
+            winit::Event::WindowEvent { event: winit::WindowEvent::CloseRequested, .. } => {
+                winit::ControlFlow::Break
+            },
+            _ => winit::ControlFlow::Continue,
+        }
+    });
 }
