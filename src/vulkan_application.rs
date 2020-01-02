@@ -56,17 +56,17 @@ impl VulkanApplication {
     }
 
     pub fn main_loop(&mut self) {
-        loop {
-            let mut done = false;
-            self.events_loop.poll_events(|ev| {
-                if let Event::WindowEvent { event: WindowEvent::CloseRequested, .. } = ev {
-                    done = true
-                }
-            });
-            if done {
-                return;
+        self.events_loop.run_forever(|event| {
+            println!("{:?}", event);
+
+            match event {
+                winit::Event::WindowEvent {
+                    event: winit::WindowEvent::CloseRequested,
+                    ..
+                } => winit::ControlFlow::Break,
+                _ => winit::ControlFlow::Continue,
             }
-        }
+        });
     }
 }
 
