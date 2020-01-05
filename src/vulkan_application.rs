@@ -81,9 +81,7 @@ impl VulkanApplication {
             engine_version: Some(Version { major: 1, minor: 0, patch: 0 }),
         };
 
-        let required_extensions = vulkano_win::required_extensions();
-        Instance::new(Some(&app_info), &required_extensions, None)
-            .expect("failed to create Vulkan instance");
+        let required_extensions = Self::get_required_extensions();
 
         if ENABLE_VALIDATION_LAYERS && Self::check_validation_layer_support() {
             Instance::new(Some(&app_info), &required_extensions, VALIDATION_LAYERS.iter().cloned())
