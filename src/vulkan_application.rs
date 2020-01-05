@@ -2,9 +2,11 @@ extern crate winit;
 extern crate vulkano_win;
 extern crate vulkano;
 
+use std::iter::FromIterator;
 use std::sync::Arc;
+use std::collections::HashSet;
 
-use winit::{EventsLoop, WindowBuilder, dpi::LogicalSize};
+use winit::{EventsLoop, WindowBuilder, Window, dpi::LogicalSize};
 
 use vulkano::instance::{
     Instance,
@@ -15,6 +17,12 @@ use vulkano::instance::{
     layers_list,
 };
 use vulkano::instance::debug::{DebugCallback, MessageTypes};
+use vulkano::device::{Device, DeviceExtensions, Queue, Features};
+use vulkano::swapchain::{
+    Surface,
+};
+
+use vulkano_win::VkSurfaceBuild;
 
 
 const WIDTH: u32 = 800;
@@ -31,14 +39,15 @@ const ENABLE_VALIDATION_LAYERS: bool = false;
 
 struct QueueFamilyIndices {
     graphics_family: i32,
+    present_family: i32
 }
 impl QueueFamilyIndices {
     fn new() -> Self {
-        Self { graphics_family: -1 }
+         Self { graphics_family: -1, present_family: -1 }
     }
 
     fn is_complete(&self) -> bool {
-        self.graphics_family >= 0
+        self.graphics_family >= 0 && self.present_family >= 0
     }
 }
 
@@ -47,21 +56,32 @@ pub struct VulkanApplication {
     instance: Arc<Instance>,
     debug_callback: Option<DebugCallback>,
     events_loop: EventsLoop,
+    surface: Arc<Surface<Window>>,
     physical_device_index: usize,
+    device: Arc<Device>,
+    graphics_queue: Arc<Queue>,
+    present_queue: Arc<Queue>,
 }
 
 impl VulkanApplication {
     pub fn initialize() -> Self {
-        let events_loop = Self::init_window();
         let instance = Self::create_instance();
-        let physical_device_index = Self::pick_physical_device(&instance);
         let debug_callback = Self::setup_debug_callback(&instance);
+        let (events_loop, surface) = Self::create_surface(&instance);
+        let physical_device_index = Self::pick_physical_device(&instance, &surface);
+        let (device, graphics_queue, present_queue) = Self::create_logical_device(
+            &instance, &surface, physical_device_index);
+        
 
         Self {
-            instance,
-            events_loop,
-            debug_callback,
-            physical_device_index
+             instance,
+             debug_callback,
+             events_loop,
+             surface,
+             physical_device_index,
+             device,
+             graphics_queue,
+             present_queue
         }
     }
 
@@ -91,15 +111,6 @@ impl VulkanApplication {
                 .expect("failed to create Vulkan instance")
         }
 
-    }
-
-    fn init_window() -> EventsLoop {
-        let events_loop = EventsLoop::new();
-        let _window = WindowBuilder::new()
-            .with_title("Vulkan")
-            .with_dimensions(LogicalSize::new(f64::from(WIDTH), f64::from(HEIGHT)))
-            .build(&events_loop);
-        events_loop
     }
 
     fn check_validation_layer_support() -> bool {
@@ -135,23 +146,27 @@ impl VulkanApplication {
         }).ok()
     }
 
-    fn pick_physical_device(instance: &Arc<Instance>) -> usize {
+    fn pick_physical_device(instance: &Arc<Instance>, surface: &Arc<Surface<Window>>) -> usize {
         PhysicalDevice::enumerate(&instance)
-            .position(|device| Self::is_device_suitable(&device))
+            .position(|device| Self::is_device_suitable(surface, &device))
             .expect("failed to find a suitable GPU!")
     }
 
-    fn is_device_suitable(device: &PhysicalDevice) -> bool {
-        let indices = Self::find_queue_families(device);
+    fn is_device_suitable(surface: &Arc<Surface<Window>>, device: &PhysicalDevice) -> bool {
+        let indices = Self::find_queue_families(surface, device);
         indices.is_complete()
     }
 
-    fn find_queue_families(device: &PhysicalDevice) -> QueueFamilyIndices {
+    fn find_queue_families(surface: &Arc<Surface<Window>>, device: &PhysicalDevice) -> QueueFamilyIndices {
         let mut indices = QueueFamilyIndices::new();
         // TODO: replace index with id to simplify?
         for (i, queue_family) in device.queue_families().enumerate() {
             if queue_family.supports_graphics() {
                 indices.graphics_family = i as i32;
+            }
+
+            if surface.is_supported(queue_family).unwrap() {
+                indices.present_family = i as i32;
             }
 
             if indices.is_complete() {
@@ -160,6 +175,43 @@ impl VulkanApplication {
         }
 
         indices
+    }
+
+    fn create_logical_device(instance: &Arc<Instance>, surface: &Arc<Surface<Window>>, physical_device_index: usize) -> (Arc<Device>, Arc<Queue>, Arc<Queue>) {
+        let physical_device = PhysicalDevice::from_index(&instance, physical_device_index).unwrap();
+        let indices = Self::find_queue_families(&surface, &physical_device);
+
+        let families = [indices.graphics_family, indices.present_family];
+        let unique_queue_families: HashSet<&i32> = HashSet::from_iter(families.iter());
+        
+        let queue_priority = 1.0;
+        let queue_families = unique_queue_families.iter().map(|i| {
+            (physical_device.queue_families().nth(**i as usize).unwrap(), queue_priority)
+        });
+
+        // NOTE: the tutorial recommends passing the validation layers as well
+        // for legacy reasons (if ENABLE_VALIDATION_LAYERS is true). Vulkano handles that
+        // for us internally.
+
+        let (device, mut queues) = Device::new(physical_device, &Features::none(),
+            &DeviceExtensions::none(), queue_families)
+            .expect("failed to create logical device!");
+
+        let graphics_queue = queues.next().unwrap();
+        let present_queue = queues.next().unwrap_or_else(|| graphics_queue.clone());
+
+        (device, graphics_queue, present_queue)
+    }
+
+
+    fn create_surface(instance: &Arc<Instance>) -> (EventsLoop, Arc<Surface<Window>>) {
+        let events_loop = EventsLoop::new();
+        let surface = WindowBuilder::new()
+            .with_title("Vulkan")
+            .with_dimensions(LogicalSize::new(f64::from(WIDTH), f64::from(HEIGHT)))
+            .build_vk_surface(&events_loop, instance.clone())
+            .expect("failed to create window surface!");
+        (events_loop, surface)
     }
 
     pub fn main_loop(&mut self) {
