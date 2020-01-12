@@ -28,6 +28,12 @@ use vulkano::swapchain::{
     CompositeAlpha,
 };
 
+use vulkano::pipeline::{
+    GraphicsPipeline,
+    vertex::BufferlessDefinition,
+    viewport::Viewport,
+};
+
 use vulkano::format::Format;
 use vulkano::image::{ImageUsage, swapchain::SwapchainImage};
 use vulkano::sync::SharingMode;
@@ -94,6 +100,8 @@ impl VulkanApplication {
 
         let (swap_chain, swap_chain_images) = Self::create_swap_chain(&instance, &surface, physical_device_index,
             &device, &graphics_queue, &present_queue);
+
+        Self::create_graphics_pipeline(&device, swap_chain.dimensions());
 
         Self {
             instance,
@@ -339,6 +347,51 @@ impl VulkanApplication {
             .build_vk_surface(&events_loop, instance.clone())
             .expect("failed to create window surface!");
         (events_loop, surface)
+    }
+
+    fn create_graphics_pipeline(device: &Arc<Device>, swap_chain_extent: [u32; 2] ) {
+        mod vertex_shader {
+            vulkano_shaders::shader! {
+               ty: "vertex",
+               path: "src/vert.glsl"
+            }
+        }
+
+        mod fragment_shader {
+            vulkano_shaders::shader! {
+                ty: "fragment",
+                path: "src/frag.glsl"
+            }
+        }
+
+        let vert_shader_module = vertex_shader::Shader::load(device.clone())
+            .expect("failed to create vertex shader module!");
+        let frag_shader_module = fragment_shader::Shader::load(device.clone())
+            .expect("failed to create fragment shader module!");
+
+        let dimensions = [swap_chain_extent[0] as f32, swap_chain_extent[1] as f32];
+        let viewport = Viewport {
+            origin: [0.0, 0.0],
+            dimensions,
+            depth_range: 0.0 .. 1.0,
+        };
+ 
+        let _pipeline_builder = Arc::new(GraphicsPipeline::start()
+            .vertex_input(BufferlessDefinition {})
+            .vertex_shader(vert_shader_module.main_entry_point(), ())
+            .triangle_list()
+            .primitive_restart(false)
+            .viewports(vec![viewport]) // NOTE: also sets scissor to cover whole viewport
+            .fragment_shader(frag_shader_module.main_entry_point(), ())
+            .depth_clamp(false)
+            // NOTE: there's an outcommented .rasterizer_discard() in Vulkano...
+            .polygon_mode_fill() // = default
+            .line_width(1.0) // = default
+            .cull_mode_back()
+            .front_face_clockwise()
+            // NOTE: no depth_bias here, but on pipeline::raster::Rasterization
+            .blend_pass_through() // = default
+        );
     }
 
     pub fn main_loop(&mut self) {
