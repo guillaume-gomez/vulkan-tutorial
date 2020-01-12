@@ -1,6 +1,6 @@
+extern crate vulkano;
 extern crate winit;
 extern crate vulkano_win;
-extern crate vulkano;
 
 use std::iter::FromIterator;
 use std::sync::Arc;
@@ -39,6 +39,10 @@ use vulkano::image::{ImageUsage, swapchain::SwapchainImage};
 use vulkano::sync::SharingMode;
 
 use vulkano_win::VkSurfaceBuild;
+
+use vulkano::framebuffer::{
+    RenderPassAbstract,
+};
 
 
 const WIDTH: u32 = 800;
@@ -86,6 +90,7 @@ pub struct VulkanApplication {
     present_queue: Arc<Queue>,
     swap_chain: Arc<Swapchain<Window>>,
     swap_chain_images: Vec<Arc<SwapchainImage<Window>>>,
+    render_pass: Arc<RenderPassAbstract + Send + Sync>
 }
 
 impl VulkanApplication {
@@ -102,7 +107,7 @@ impl VulkanApplication {
             &device, &graphics_queue, &present_queue);
 
         Self::create_graphics_pipeline(&device, swap_chain.dimensions());
-
+        let render_pass = Self::create_render_pass(&device, swap_chain.format());
         Self {
             instance,
             debug_callback,
@@ -114,6 +119,7 @@ impl VulkanApplication {
             present_queue,
             swap_chain,
             swap_chain_images,
+            render_pass
         }
     }
 
@@ -392,6 +398,23 @@ impl VulkanApplication {
             // NOTE: no depth_bias here, but on pipeline::raster::Rasterization
             .blend_pass_through() // = default
         );
+    }
+
+    fn create_render_pass(device: &Arc<Device>, color_format: Format) -> Arc<RenderPassAbstract + Send + Sync> {
+        Arc::new(single_pass_renderpass!(device.clone(),
+            attachments: {
+                color: {
+                    load: Clear,
+                    store: Store,
+                    format: color_format,
+                    samples: 1,
+                }
+            },
+            pass: {
+                color: [color],
+                depth_stencil: {}
+            }
+        ).unwrap())
     }
 
     pub fn main_loop(&mut self) {

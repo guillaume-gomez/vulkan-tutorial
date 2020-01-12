@@ -17,6 +17,9 @@ use winit::{EventsLoop, Window, WindowBuilder};
 
 use std::sync::Arc;
 
+#[macro_use]
+extern crate vulkano;
+
 
 mod vulkan_application;
 use vulkan_application::VulkanApplication;
