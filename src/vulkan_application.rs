@@ -26,7 +26,8 @@ use vulkano::swapchain::{
     PresentMode,
     Swapchain,
     CompositeAlpha,
-    acquire_next_image
+    acquire_next_image,
+    AcquireError
 };
 
 use vulkano::pipeline::{
@@ -38,7 +39,7 @@ use vulkano::pipeline::{
 
 use vulkano::format::Format;
 use vulkano::image::{ImageUsage, swapchain::SwapchainImage};
-use vulkano::sync::{SharingMode, GpuFuture};
+use vulkano::sync::{self, SharingMode, GpuFuture};
 
 use vulkano_win::VkSurfaceBuild;
 
@@ -108,6 +109,8 @@ pub struct VulkanApplication {
     graphics_pipeline: Arc<ConcreteGraphicsPipeline>,
     swap_chain_framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
     command_buffers: Vec<Arc<AutoCommandBuffer>>,
+    previous_frame_end: Option<Box<GpuFuture>>,
+    recreate_swap_chain: bool,
 }
 
 
@@ -127,6 +130,7 @@ impl VulkanApplication {
         let render_pass = Self::create_render_pass(&device, swap_chain.format());
         let graphics_pipeline = Self::create_graphics_pipeline(&device, swap_chain.dimensions(), &render_pass);
         let swap_chain_framebuffers = Self::create_framebuffers(&swap_chain_images, &render_pass);
+        let previous_frame_end = Some(Self::create_sync_objects(&device));
 
         let mut app = Self {
             instance,
@@ -143,6 +147,8 @@ impl VulkanApplication {
             graphics_pipeline,
             swap_chain_framebuffers,
             command_buffers: vec![],
+            previous_frame_end,
+            recreate_swap_chain: false,
         };
 
         app.create_command_buffers();
@@ -175,6 +181,10 @@ impl VulkanApplication {
                 .expect("failed to create Vulkan instance")
         }
 
+    }
+
+    fn create_sync_objects(device: &Arc<Device>) -> Box<GpuFuture> {
+        Box::new(sync::now(device.clone())) as Box<GpuFuture>
     }
 
     fn check_validation_layer_support() -> bool {
