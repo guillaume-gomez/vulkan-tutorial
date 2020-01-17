@@ -33,8 +33,9 @@ use vulkano::swapchain::{
 use vulkano::pipeline::{
     GraphicsPipeline,
     vertex::BufferlessDefinition,
+    vertex::BufferlessVertices,
+    GraphicsPipelineAbstract,
     viewport::Viewport,
-    vertex::BufferlessVertices
 };
 
 use vulkano::format::Format;
@@ -57,6 +58,12 @@ use vulkano::command_buffer::{
 };
 
 use vulkano::descriptor::PipelineLayoutAbstract;
+
+use vulkano::buffer::{
+    cpu_access::CpuAccessibleBuffer,
+    BufferUsage,
+    BufferAccess,
+};
 
 type ConcreteGraphicsPipeline = GraphicsPipeline<BufferlessDefinition, Box<PipelineLayoutAbstract + Send + Sync + 'static>, Arc<RenderPassAbstract + Send + Sync + 'static>>;
 
@@ -125,7 +132,7 @@ impl VulkanApplication {
 
 
         let (swap_chain, swap_chain_images) = Self::create_swap_chain(&instance, &surface, physical_device_index,
-            &device, &graphics_queue, &present_queue);
+            &device, &graphics_queue, &present_queue, None);
 
         let render_pass = Self::create_render_pass(&device, swap_chain.format());
         let graphics_pipeline = Self::create_graphics_pipeline(&device, swap_chain.dimensions(), &render_pass);
@@ -148,7 +155,7 @@ impl VulkanApplication {
             swap_chain_framebuffers,
             command_buffers: vec![],
             previous_frame_end,
-            recreate_swap_chain: false,
+            recreate_swap_chain: false
         };
 
         app.create_command_buffers();
@@ -288,6 +295,7 @@ impl VulkanApplication {
         device: &Arc<Device>,
         graphics_queue: &Arc<Queue>,
         present_queue: &Arc<Queue>,
+        old_swapchain: Option<Arc<Swapchain<Window>>>
     ) -> (Arc<Swapchain<Window>>, Vec<Arc<SwapchainImage<Window>>>) {
         let physical_device = PhysicalDevice::from_index(&instance, physical_device_index).unwrap();
         let capabilities = surface.capabilities(physical_device)
@@ -328,7 +336,7 @@ impl VulkanApplication {
             CompositeAlpha::Opaque,
             present_mode,
             true, // clipped
-            None,
+            old_swapchain.as_ref(),
         ).expect("failed to create swap chain!");
 
         (swap_chain, images)
@@ -488,19 +496,60 @@ impl VulkanApplication {
     }
 
     fn draw_frame(&mut self) {
-        let (image_index, acquire_future) = acquire_next_image(self.swap_chain.clone(), None).unwrap();
+        self.previous_frame_end.as_mut().unwrap().cleanup_finished();
+
+        if self.recreate_swap_chain {
+            self.recreate_swap_chain();
+            self.recreate_swap_chain = false;
+        }
+
+        let (image_index, acquire_future) = match acquire_next_image(self.swap_chain.clone(), None) {
+            Ok(r) => r,
+            Err(AcquireError::OutOfDate) => {
+                self.recreate_swap_chain = true;
+                return;
+            },
+            Err(err) => panic!("{:?}", err)
+        };
 
         let command_buffer = self.command_buffers[image_index].clone();
 
-        let future = acquire_future
+        let future = self.previous_frame_end.take().unwrap()
+            .join(acquire_future)
             .then_execute(self.graphics_queue.clone(), command_buffer)
             .unwrap()
             .then_swapchain_present(self.present_queue.clone(), self.swap_chain.clone(), image_index)
-            .then_signal_fence_and_flush()
-            .unwrap();
+            .then_signal_fence_and_flush();
 
-        future.wait(None).unwrap();
+        match future {
+            Ok(future) => {
+                self.previous_frame_end = Some(Box::new(future) as Box<_>);
+            }
+            Err(vulkano::sync::FlushError::OutOfDate) => {
+                self.recreate_swap_chain = true;
+                self.previous_frame_end
+                    = Some(Box::new(vulkano::sync::now(self.device.clone())) as Box<_>);
+            }
+            Err(e) => {
+                println!("{:?}", e);
+                self.previous_frame_end
+                    = Some(Box::new(vulkano::sync::now(self.device.clone())) as Box<_>);
+            }
+        }
     }
+
+    fn recreate_swap_chain(&mut self) {
+        let (swap_chain, images) = Self::create_swap_chain(&self.instance, &self.surface, self.physical_device_index,
+            &self.device, &self.graphics_queue, &self.present_queue, Some(self.swap_chain.clone()));
+        self.swap_chain = swap_chain;
+        self.swap_chain_images = images;
+
+        self.render_pass = Self::create_render_pass(&self.device, self.swap_chain.format());
+        self.graphics_pipeline = Self::create_graphics_pipeline(&self.device, self.swap_chain.dimensions(),
+            &self.render_pass);
+        self.swap_chain_framebuffers = Self::create_framebuffers(&self.swap_chain_images, &self.render_pass);
+        self.create_command_buffers();
+     }
 
     pub fn main_loop(&mut self) {
         loop {
