@@ -57,15 +57,47 @@ use vulkano::command_buffer::{
     DynamicState,
 };
 
-use vulkano::descriptor::PipelineLayoutAbstract;
-
 use vulkano::buffer::{
     cpu_access::CpuAccessibleBuffer,
     BufferUsage,
     BufferAccess,
 };
 
-type ConcreteGraphicsPipeline = GraphicsPipeline<BufferlessDefinition, Box<PipelineLayoutAbstract + Send + Sync + 'static>, Arc<RenderPassAbstract + Send + Sync + 'static>>;
+
+// let vertex_buffer = {
+//         #[derive(Default, Debug, Clone)]
+//         struct Vertex { position: [f32; 2] }
+//         vulkano::impl_vertex!(Vertex, position);
+
+//         CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(), [
+//             Vertex { position: [-0.5, -0.25] },
+//             Vertex { position: [0.0, 0.5] },
+//             Vertex { position: [0.25, -0.1] },
+//         ].iter().cloned()).unwrap()
+//     };
+
+
+#[derive(Default, Copy, Clone)]
+struct Vertex {
+    pos: [f32; 2],
+    color: [f32; 3],
+}
+
+impl Vertex {
+    fn new(pos: [f32; 2], color: [f32; 3]) -> Self {
+        Self { pos, color }
+    }
+}
+
+vulkano::impl_vertex!(Vertex, pos, color);
+
+fn vertices() -> [Vertex; 3] {
+    [
+        Vertex::new([0.0, -0.5], [1.0, 1.0, 1.0]),
+        Vertex::new([0.5, 0.5], [0.0, 1.0, 0.0]),
+        Vertex::new([-0.5, 0.5], [0.0, 0.0, 1.])
+    ]
+}
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -113,8 +145,9 @@ pub struct VulkanApplication {
     swap_chain: Arc<Swapchain<Window>>,
     swap_chain_images: Vec<Arc<SwapchainImage<Window>>>,
     render_pass: Arc<RenderPassAbstract + Send + Sync>,
-    graphics_pipeline: Arc<ConcreteGraphicsPipeline>,
+    graphics_pipeline: Arc<GraphicsPipelineAbstract + Send + Sync>,
     swap_chain_framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
+    vertex_buffer: Arc<BufferAccess + Send + Sync>,
     command_buffers: Vec<Arc<AutoCommandBuffer>>,
     previous_frame_end: Option<Box<GpuFuture>>,
     recreate_swap_chain: bool,
@@ -129,6 +162,8 @@ impl VulkanApplication {
         let physical_device_index = Self::pick_physical_device(&instance, &surface);
         let (device, graphics_queue, present_queue) = Self::create_logical_device(
             &instance, &surface, physical_device_index);
+
+        let vertex_buffer = Self::create_vertex_buffer(&device);
 
 
         let (swap_chain, swap_chain_images) = Self::create_swap_chain(&instance, &surface, physical_device_index,
@@ -152,6 +187,7 @@ impl VulkanApplication {
             swap_chain_images,
             render_pass,
             graphics_pipeline,
+            vertex_buffer,
             swap_chain_framebuffers,
             command_buffers: vec![],
             previous_frame_end,
@@ -399,7 +435,7 @@ impl VulkanApplication {
         (events_loop, surface)
     }
 
-    fn create_graphics_pipeline(device: &Arc<Device>, swap_chain_extent: [u32; 2], render_pass: &Arc<RenderPassAbstract + Send + Sync>) -> Arc<ConcreteGraphicsPipeline> {
+    fn create_graphics_pipeline(device: &Arc<Device>, swap_chain_extent: [u32; 2], render_pass: &Arc<RenderPassAbstract + Send + Sync>) -> Arc<GraphicsPipelineAbstract + Send + Sync> {
         mod vertex_shader {
             vulkano_shaders::shader! {
                ty: "vertex",
@@ -427,7 +463,7 @@ impl VulkanApplication {
         };
  
         Arc::new(GraphicsPipeline::start()
-            .vertex_input(BufferlessDefinition {})
+            .vertex_input_single_buffer::<Vertex>()
             .vertex_shader(vert_shader_module.main_entry_point(), ())
             .triangle_list()
             .primitive_restart(false)
@@ -445,6 +481,11 @@ impl VulkanApplication {
             .build(device.clone())
             .unwrap()
         )
+    }
+
+    fn create_vertex_buffer(device: &Arc<Device>) -> Arc<BufferAccess + Send + Sync> {
+        CpuAccessibleBuffer::from_iter(device.clone(),
+            BufferUsage::vertex_buffer(), vertices().iter().cloned()).unwrap()
     }
 
     fn create_render_pass(device: &Arc<Device>, color_format: Format) -> Arc<RenderPassAbstract + Send + Sync> {
@@ -479,13 +520,12 @@ impl VulkanApplication {
         let queue_family = self.graphics_queue.family();
         self.command_buffers = self.swap_chain_framebuffers.iter()
             .map(|framebuffer| {
-                let vertices = BufferlessVertices { vertices: 3, instances: 1 };
                 Arc::new(AutoCommandBufferBuilder::primary_simultaneous_use(self.device.clone(), queue_family)
                     .unwrap()
                     .begin_render_pass(framebuffer.clone(), false, vec![[0.0, 0.0, 0.0, 1.0].into()])
                     .unwrap()
                     .draw(self.graphics_pipeline.clone(), &DynamicState::none(),
-                        vertices, (), ())
+                        vec![self.vertex_buffer.clone()], (), ())
                     .unwrap()
                     .end_render_pass()
                     .unwrap()
