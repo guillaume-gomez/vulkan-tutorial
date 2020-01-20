@@ -58,23 +58,11 @@ use vulkano::command_buffer::{
 };
 
 use vulkano::buffer::{
-    cpu_access::CpuAccessibleBuffer,
+    TypedBufferAccess,
+    immutable::ImmutableBuffer,
     BufferUsage,
     BufferAccess,
 };
-
-
-// let vertex_buffer = {
-//         #[derive(Default, Debug, Clone)]
-//         struct Vertex { position: [f32; 2] }
-//         vulkano::impl_vertex!(Vertex, position);
-
-//         CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(), [
-//             Vertex { position: [-0.5, -0.25] },
-//             Vertex { position: [0.0, 0.5] },
-//             Vertex { position: [0.25, -0.1] },
-//         ].iter().cloned()).unwrap()
-//     };
 
 
 #[derive(Default, Copy, Clone)]
@@ -91,13 +79,19 @@ impl Vertex {
 
 vulkano::impl_vertex!(Vertex, pos, color);
 
-fn vertices() -> [Vertex; 3] {
+fn vertices() -> [Vertex; 4] {
     [
-        Vertex::new([0.0, -0.5], [1.0, 1.0, 1.0]),
-        Vertex::new([0.5, 0.5], [0.0, 1.0, 0.0]),
-        Vertex::new([-0.5, 0.5], [0.0, 0.0, 1.])
+        Vertex::new([-0.5, -0.5], [1.0, 0.0, 0.0]),
+        Vertex::new([0.5, -0.5], [0.0, 1.0, 0.0]),
+        Vertex::new([0.5, 0.5], [0.0, 0.0, 1.0]),
+        Vertex::new([-0.5, 0.5], [1.0, 1.0, 1.0])
     ]
 }
+
+fn indices() -> [u16; 6] {
+    [0, 1, 2, 2, 3, 0]
+}
+
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -148,6 +142,7 @@ pub struct VulkanApplication {
     graphics_pipeline: Arc<GraphicsPipelineAbstract + Send + Sync>,
     swap_chain_framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
     vertex_buffer: Arc<BufferAccess + Send + Sync>,
+    index_buffer: Arc<TypedBufferAccess<Content=[u16]> + Send + Sync>,
     command_buffers: Vec<Arc<AutoCommandBuffer>>,
     previous_frame_end: Option<Box<GpuFuture>>,
     recreate_swap_chain: bool,
@@ -163,7 +158,8 @@ impl VulkanApplication {
         let (device, graphics_queue, present_queue) = Self::create_logical_device(
             &instance, &surface, physical_device_index);
 
-        let vertex_buffer = Self::create_vertex_buffer(&device);
+        let vertex_buffer = Self::create_vertex_buffer(&graphics_queue);
+        let index_buffer = Self::create_index_buffer(&graphics_queue);
 
 
         let (swap_chain, swap_chain_images) = Self::create_swap_chain(&instance, &surface, physical_device_index,
@@ -188,6 +184,7 @@ impl VulkanApplication {
             render_pass,
             graphics_pipeline,
             vertex_buffer,
+            index_buffer,
             swap_chain_framebuffers,
             command_buffers: vec![],
             previous_frame_end,
@@ -483,9 +480,22 @@ impl VulkanApplication {
         )
     }
 
-    fn create_vertex_buffer(device: &Arc<Device>) -> Arc<BufferAccess + Send + Sync> {
-        CpuAccessibleBuffer::from_iter(device.clone(),
-            BufferUsage::vertex_buffer(), vertices().iter().cloned()).unwrap()
+    fn create_index_buffer(graphics_queue: &Arc<Queue>) -> Arc<TypedBufferAccess<Content=[u16]> + Send + Sync> {
+        let (buffer, future) = ImmutableBuffer::from_iter(
+            indices().iter().cloned(), BufferUsage::index_buffer(),
+            graphics_queue.clone())
+            .unwrap();
+        future.flush().unwrap();
+        buffer
+    }
+
+    fn create_vertex_buffer(graphics_queue: &Arc<Queue>) -> Arc<BufferAccess + Send + Sync> {
+        let (buffer, future) = ImmutableBuffer::from_iter(
+            vertices().iter().cloned(), BufferUsage::vertex_buffer(),
+            graphics_queue.clone())
+            .unwrap();
+        future.flush().unwrap();
+        buffer
     }
 
     fn create_render_pass(device: &Arc<Device>, color_format: Format) -> Arc<RenderPassAbstract + Send + Sync> {
@@ -524,8 +534,9 @@ impl VulkanApplication {
                     .unwrap()
                     .begin_render_pass(framebuffer.clone(), false, vec![[0.0, 0.0, 0.0, 1.0].into()])
                     .unwrap()
-                    .draw(self.graphics_pipeline.clone(), &DynamicState::none(),
-                        vec![self.vertex_buffer.clone()], (), ())
+                    .draw_indexed(self.graphics_pipeline.clone(), &DynamicState::none(),
+                    vec![self.vertex_buffer.clone()],
+                    self.index_buffer.clone(), (), ())
                     .unwrap()
                     .end_render_pass()
                     .unwrap()
