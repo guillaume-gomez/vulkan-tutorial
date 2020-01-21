@@ -79,17 +79,19 @@ impl Vertex {
 
 vulkano::impl_vertex!(Vertex, pos, color);
 
-fn vertices() -> [Vertex; 4] {
+fn vertices() -> [Vertex; 5] {
     [
         Vertex::new([-0.5, -0.5], [1.0, 0.0, 0.0]),
         Vertex::new([0.5, -0.5], [0.0, 1.0, 0.0]),
-        Vertex::new([0.5, 0.5], [0.0, 1.0, 1.0]),
-        Vertex::new([-0.5, 0.5], [1.0, 1.0, 1.0])
+        Vertex::new([0.5, 0.5], [0.0, 0.0, 1.0]),
+        Vertex::new([-0.5, 0.5], [1.0, 1.0, 1.0]),
+        Vertex::new([0.0, 0.0], [1.0, 1.0, 1.0])
+
     ]
 }
 
-fn indices() -> [u16; 6] {
-    [0, 1, 2, 2, 3, 0]
+fn indices() -> [u16; 9] {
+    [0, 1, 2, 2, 3, 0, 0, 5, 3]
 }
 
 
