@@ -528,7 +528,7 @@ impl VulkanApplication {
         ).collect::<Vec<_>>()
     }
 
-    fn create_command_buffers(&mut self) {
+    fn create_command_buffers(&mut self) { // index, vertices
         let queue_family = self.graphics_queue.family();
         self.command_buffers = self.swap_chain_framebuffers.iter()
             .map(|framebuffer| {
@@ -548,11 +548,11 @@ impl VulkanApplication {
             .collect();
     }
 
-    fn draw_frame(&mut self) {
+    fn draw_frame(&mut self) { // vertex, vertices
         self.previous_frame_end.as_mut().unwrap().cleanup_finished();
 
         if self.recreate_swap_chain {
-            self.recreate_swap_chain();
+            self.recreate_swap_chain(); // vertex, vertices
             self.recreate_swap_chain = false;
         }
 
@@ -591,7 +591,7 @@ impl VulkanApplication {
         }
     }
 
-    fn recreate_swap_chain(&mut self) {
+    fn recreate_swap_chain(&mut self) { // index, vertices
         let (swap_chain, images) = Self::create_swap_chain(&self.instance, &self.surface, self.physical_device_index,
             &self.device, &self.graphics_queue, &self.present_queue, Some(self.swap_chain.clone()));
         self.swap_chain = swap_chain;
@@ -601,12 +601,12 @@ impl VulkanApplication {
         self.graphics_pipeline = Self::create_graphics_pipeline(&self.device, self.swap_chain.dimensions(),
             &self.render_pass);
         self.swap_chain_framebuffers = Self::create_framebuffers(&self.swap_chain_images, &self.render_pass);
-        self.create_command_buffers();
+        self.create_command_buffers(); // inedx, vertices
      }
 
-    pub fn main_loop(&mut self) {
+    pub fn main_loop(&mut self) { //, vertex, indices ) {
         loop {
-            self.draw_frame();
+            self.draw_frame();// vertex, indices
 
             let mut done = false;
             self.events_loop.run_forever(|event| {
