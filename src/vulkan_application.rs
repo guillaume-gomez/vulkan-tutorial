@@ -528,7 +528,7 @@ impl VulkanApplication {
         ).collect::<Vec<_>>()
     }
 
-    fn create_command_buffers(&mut self) { // index, vertices
+    fn create_command_buffers(&mut self) /* index, vertices */ {
         let queue_family = self.graphics_queue.family();
         self.command_buffers = self.swap_chain_framebuffers.iter()
             .map(|framebuffer| {
@@ -604,9 +604,9 @@ impl VulkanApplication {
         self.create_command_buffers(); // inedx, vertices
      }
 
-    pub fn main_loop(&mut self) { //, vertex, indices ) {
+    pub fn main_loop(&mut self) /* vertex, indices */ {
         loop {
-            self.draw_frame();// vertex, indices
+            self.draw_frame(); //vertex, indices
 
             let mut done = false;
             self.events_loop.run_forever(|event| {
