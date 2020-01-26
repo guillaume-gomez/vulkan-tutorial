@@ -6,6 +6,7 @@ use std::iter::FromIterator;
 use std::sync::Arc;
 use std::collections::HashSet;
 
+
 use winit::{EventsLoop, WindowBuilder, Window, dpi::LogicalSize};
 
 use vulkano::instance::{
@@ -32,8 +33,6 @@ use vulkano::swapchain::{
 
 use vulkano::pipeline::{
     GraphicsPipeline,
-    vertex::BufferlessDefinition,
-    vertex::BufferlessVertices,
     GraphicsPipelineAbstract,
     viewport::Viewport,
 };
@@ -63,8 +62,7 @@ use vulkano::buffer::{
     BufferUsage,
     BufferAccess,
 };
-use crate::indices;
-use crate::vertices;
+
 use crate::Vertex;
 
 const WIDTH: u32 = 800;
@@ -112,11 +110,11 @@ pub struct VulkanApplication {
     present_queue: Arc<Queue>,
     swap_chain: Arc<Swapchain<Window>>,
     swap_chain_images: Vec<Arc<SwapchainImage<Window>>>,
-    render_pass: Arc<RenderPassAbstract + Send + Sync>,
-    graphics_pipeline: Arc<GraphicsPipelineAbstract + Send + Sync>,
-    swap_chain_framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
+    render_pass: Arc<dyn RenderPassAbstract + Send + Sync>,
+    graphics_pipeline: Arc<dyn GraphicsPipelineAbstract + Send + Sync>,
+    swap_chain_framebuffers: Vec<Arc<dyn FramebufferAbstract + Send + Sync>>,
     command_buffers: Vec<Arc<AutoCommandBuffer>>,
-    previous_frame_end: Option<Box<GpuFuture>>,
+    previous_frame_end: Option<Box<dyn GpuFuture>>,
     recreate_swap_chain: bool,
 }
 
@@ -186,8 +184,8 @@ impl VulkanApplication {
 
     }
 
-    fn create_sync_objects(device: &Arc<Device>) -> Box<GpuFuture> {
-        Box::new(sync::now(device.clone())) as Box<GpuFuture>
+    fn create_sync_objects(device: &Arc<Device>) -> Box<dyn GpuFuture> {
+        Box::new(sync::now(device.clone())) as Box<dyn GpuFuture>
     }
 
     fn check_validation_layer_support() -> bool {
@@ -395,7 +393,7 @@ impl VulkanApplication {
         (events_loop, surface)
     }
 
-    fn create_graphics_pipeline(device: &Arc<Device>, swap_chain_extent: [u32; 2], render_pass: &Arc<RenderPassAbstract + Send + Sync>) -> Arc<GraphicsPipelineAbstract + Send + Sync> {
+    fn create_graphics_pipeline(device: &Arc<Device>, swap_chain_extent: [u32; 2], render_pass: &Arc<dyn RenderPassAbstract + Send + Sync>) -> Arc<dyn GraphicsPipelineAbstract + Send + Sync> {
         mod vertex_shader {
             vulkano_shaders::shader! {
                ty: "vertex",
@@ -443,7 +441,7 @@ impl VulkanApplication {
         )
     }
 
-    fn create_index_buffer(graphics_queue: &Arc<Queue>, indices: &Vec<u16>) -> Arc<TypedBufferAccess<Content=[u16]> + Send + Sync> {
+    fn create_index_buffer(graphics_queue: &Arc<Queue>, indices: &Vec<u16>) -> Arc<dyn TypedBufferAccess<Content=[u16]> + Send + Sync> {
         let (buffer, future) = ImmutableBuffer::from_iter(
             indices.iter().cloned(), BufferUsage::index_buffer(),
             graphics_queue.clone())
@@ -452,7 +450,8 @@ impl VulkanApplication {
         buffer
     }
 
-    fn create_vertex_buffer(graphics_queue: &Arc<Queue>, vertices: &Vec<Vertex>) -> Arc<BufferAccess + Send + Sync> {
+    fn create_vertex_buffer(graphics_queue: &Arc<Queue>, vertices: &Vec<Vertex>) -> Arc<dyn BufferAccess + Send + Sync> {
+        println!("{:?}", vertices);
         let (buffer, future) = ImmutableBuffer::from_iter(
             vertices.iter().cloned(), BufferUsage::vertex_buffer(),
             graphics_queue.clone())
@@ -461,7 +460,7 @@ impl VulkanApplication {
         buffer
     }
 
-    fn create_render_pass(device: &Arc<Device>, color_format: Format) -> Arc<RenderPassAbstract + Send + Sync> {
+    fn create_render_pass(device: &Arc<Device>, color_format: Format) -> Arc<dyn RenderPassAbstract + Send + Sync> {
         Arc::new(single_pass_renderpass!(device.clone(),
             attachments: {
                 color: {
@@ -478,10 +477,10 @@ impl VulkanApplication {
         ).unwrap())
     }
 
-    fn create_framebuffers( swap_chain_images: &[Arc<SwapchainImage<Window>>], render_pass: &Arc<RenderPassAbstract + Send + Sync>) -> Vec<Arc<FramebufferAbstract + Send + Sync>> {
+    fn create_framebuffers( swap_chain_images: &[Arc<SwapchainImage<Window>>], render_pass: &Arc<dyn RenderPassAbstract + Send + Sync>) -> Vec<Arc<dyn FramebufferAbstract + Send + Sync>> {
         swap_chain_images.iter()
             .map(|image| {
-                let fba: Arc<FramebufferAbstract + Send + Sync> = Arc::new(Framebuffer::start(render_pass.clone())
+                let fba: Arc<dyn FramebufferAbstract + Send + Sync> = Arc::new(Framebuffer::start(render_pass.clone())
                     .add(image.clone()).unwrap()
                     .build().unwrap());
                 fba
@@ -490,6 +489,7 @@ impl VulkanApplication {
     }
 
     fn create_command_buffers(&mut self, vertices: &Vec<Vertex>, indices: &Vec<u16>){
+        println!("create_command_buffers");
         let vertex_buffer = Self::create_vertex_buffer(&self.graphics_queue, vertices);
         let index_buffer = Self::create_index_buffer(&self.graphics_queue, indices);
         let queue_family = self.graphics_queue.family();
@@ -515,8 +515,8 @@ impl VulkanApplication {
         self.previous_frame_end.as_mut().unwrap().cleanup_finished();
 
         if self.recreate_swap_chain {
-            self.recreate_swap_chain(vertices, indices);
-            self.recreate_swap_chain = false;
+             self.recreate_swap_chain(vertices, indices);
+             self.recreate_swap_chain = false;
         }
 
         let (image_index, acquire_future) = match acquire_next_image(self.swap_chain.clone(), None) {
@@ -568,9 +568,10 @@ impl VulkanApplication {
      }
 
     pub fn main_loop(&mut self, vertices: &Vec<Vertex>, indices: &Vec<u16>) {
+        println!("main_loop");
         loop {
+            println!("draw_frame" );
             self.draw_frame(vertices, indices);
-
             let mut done = false;
             self.events_loop.run_forever(|event| {
                 // println!("{:?}", event);
