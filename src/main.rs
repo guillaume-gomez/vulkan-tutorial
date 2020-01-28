@@ -23,10 +23,10 @@ vulkano::impl_vertex!(Vertex, pos, color);
 pub fn vertices() -> Vec<Vertex> {
 
     [
-        Vertex::new([rand::thread_rng().gen(), -0.5], [1.0, 0.0, 0.0]),
-        Vertex::new([0.5, -0.5], [0.0, 1.0, 0.0]),
-        Vertex::new([rand::thread_rng().gen(), 0.5], [0.0, 0.0, 1.0]),
-        Vertex::new([-0.5, rand::thread_rng().gen()], [1.0, 1.0, 1.0]),
+        Vertex::new([rand::thread_rng().gen(), -0.5], [rand::thread_rng().gen(), 0.0, 0.0]),
+        Vertex::new([0.5, -0.5], [rand::thread_rng().gen(), 1.0, 0.0]),
+        Vertex::new([rand::thread_rng().gen(), 0.5], [0.0, rand::thread_rng().gen(), 1.0]),
+        Vertex::new([-0.5, rand::thread_rng().gen()], [1.0, 1.0, rand::thread_rng().gen()]),
         Vertex::new([rand::thread_rng().gen(), rand::thread_rng().gen()], [1.0, 1.0, 1.0])
     ].to_vec()
 }
