@@ -2,13 +2,13 @@ extern crate vulkano;
 extern crate winit;
 extern crate vulkano_win;
 
+use winit::KeyboardInput;
 use std::iter::FromIterator;
 use std::sync::Arc;
 use std::collections::HashSet;
 
 
-use winit::{EventsLoop, WindowBuilder, Window, dpi::LogicalSize};
-
+use winit::{EventsLoop, WindowBuilder, WindowEvent, Window, dpi::LogicalSize, ElementState, VirtualKeyCode};
 use vulkano::instance::{
     Instance,
     InstanceExtensions,
@@ -581,6 +581,22 @@ impl VulkanApplication {
                         event: winit::WindowEvent::CloseRequested,
                         ..
                     } => {  done = true; winit::ControlFlow::Break},
+                    winit::Event::WindowEvent {
+                        event: WindowEvent::KeyboardInput { input, .. },
+                        ..
+                    } => match input {
+                        KeyboardInput {
+                            virtual_keycode: Some(key),
+                            state: ElementState::Pressed,
+                            ..
+                        } => match key {
+                            VirtualKeyCode::M => {
+                                winit::ControlFlow::Continue
+                            }
+                            _ => winit::ControlFlow::Continue,
+                        },
+                        _ => winit::ControlFlow::Continue,
+                    },
                     _ => winit::ControlFlow::Continue,
                 }
             });
