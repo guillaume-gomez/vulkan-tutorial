@@ -2,13 +2,13 @@ extern crate vulkano;
 extern crate winit;
 extern crate vulkano_win;
 
-use winit::KeyboardInput;
+
 use std::iter::FromIterator;
 use std::sync::Arc;
 use std::collections::HashSet;
 
 
-use winit::{EventsLoop, WindowBuilder, WindowEvent, Window, dpi::LogicalSize, ElementState, VirtualKeyCode};
+use winit::{EventsLoop, WindowBuilder, Window, dpi::LogicalSize};
 use vulkano::instance::{
     Instance,
     InstanceExtensions,
@@ -102,7 +102,7 @@ impl QueueFamilyIndices {
 pub struct VulkanApplication {
     instance: Arc<Instance>,
     debug_callback: Option<DebugCallback>,
-    events_loop: EventsLoop,
+    pub events_loop: EventsLoop,
     surface: Arc<Surface<Window>>,
     physical_device_index: usize,
     device: Arc<Device>,
@@ -511,7 +511,7 @@ impl VulkanApplication {
             .collect();
     }
 
-    fn draw_frame(&mut self, vertices: &Vec<Vertex>, indices: &Vec<u16>) {
+    pub fn draw_frame(&mut self, vertices: &Vec<Vertex>, indices: &Vec<u16>) {
         self.previous_frame_end.as_mut().unwrap().cleanup_finished();
 
         if self.recreate_swap_chain {
@@ -565,45 +565,6 @@ impl VulkanApplication {
             &self.render_pass);
         self.swap_chain_framebuffers = Self::create_framebuffers(&self.swap_chain_images, &self.render_pass);
         self.create_command_buffers(vertices, indices);
-     }
-
-    pub fn main_loop(&mut self, vertices: &Vec<Vertex>, indices: &Vec<u16>) {
-        println!("main_loop");
-        loop {
-            println!("draw_frame" );
-            self.draw_frame(vertices, indices);
-            let mut done = false;
-            self.events_loop.run_forever(|event| {
-                // println!("{:?}", event);
-
-                match event {
-                    winit::Event::WindowEvent {
-                        event: winit::WindowEvent::CloseRequested,
-                        ..
-                    } => {  done = true; winit::ControlFlow::Break},
-                    winit::Event::WindowEvent {
-                        event: WindowEvent::KeyboardInput { input, .. },
-                        ..
-                    } => match input {
-                        KeyboardInput {
-                            virtual_keycode: Some(key),
-                            state: ElementState::Pressed,
-                            ..
-                        } => match key {
-                            VirtualKeyCode::M => {
-                                winit::ControlFlow::Continue
-                            }
-                            _ => winit::ControlFlow::Continue,
-                        },
-                        _ => winit::ControlFlow::Continue,
-                    },
-                    _ => winit::ControlFlow::Continue,
-                }
-            });
-            if done {
-                return;
-            }
-        }
     }
 }
 
