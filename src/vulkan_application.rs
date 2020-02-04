@@ -3,19 +3,18 @@ extern crate winit;
 extern crate vulkano_win;
 
 
+use crate::ENABLE_VALIDATION_LAYERS;
+use crate::WIDTH;
+use crate::HEIGHT;
 use std::iter::FromIterator;
 use std::sync::Arc;
 use std::collections::HashSet;
 
 
-use winit::{EventsLoop, WindowBuilder, Window, dpi::LogicalSize};
+use winit::{Window};
 use vulkano::instance::{
     Instance,
-    InstanceExtensions,
-    ApplicationInfo,
-    Version,
     PhysicalDevice,
-    layers_list,
 };
 use vulkano::instance::debug::{DebugCallback, MessageTypes};
 use vulkano::device::{Device, DeviceExtensions, Queue, Features};
@@ -41,7 +40,7 @@ use vulkano::format::Format;
 use vulkano::image::{ImageUsage, swapchain::SwapchainImage};
 use vulkano::sync::{self, SharingMode, GpuFuture};
 
-use vulkano_win::VkSurfaceBuild;
+
 
 use vulkano::framebuffer::{
     RenderPassAbstract,
@@ -65,24 +64,12 @@ use vulkano::buffer::{
 
 use crate::Vertex;
 
-const WIDTH: u32 = 800;
-const HEIGHT: u32 = 600;
-
-const VALIDATION_LAYERS: &[&str] =  &[
-    "VK_LAYER_LUNARG_standard_validation"
-];
-
 fn device_extensions() -> DeviceExtensions {
     DeviceExtensions {
         khr_swapchain: true,
         .. vulkano::device::DeviceExtensions::none()
     }
 }
-
-#[cfg(all(debug_assertions))]
-const ENABLE_VALIDATION_LAYERS: bool = true;
-#[cfg(not(debug_assertions))]
-const ENABLE_VALIDATION_LAYERS: bool = false;
 
 struct QueueFamilyIndices {
     graphics_family: i32,
@@ -99,11 +86,10 @@ impl QueueFamilyIndices {
 }
 
 
-pub struct VulkanApplication {
-    instance: Arc<Instance>,
+pub struct VulkanApplication <'a> {
+    instance: &'a Arc<Instance>,
     debug_callback: Option<DebugCallback>,
-    pub events_loop: EventsLoop,
-    surface: Arc<Surface<Window>>,
+    surface: &'a Arc<Surface<Window>>,
     physical_device_index: usize,
     device: Arc<Device>,
     graphics_queue: Arc<Queue>,
@@ -119,11 +105,9 @@ pub struct VulkanApplication {
 }
 
 
-impl VulkanApplication {
-    pub fn initialize() -> Self {
-        let instance = Self::create_instance();
+impl<'a> VulkanApplication<'a> {
+    pub fn initialize(instance: &'a Arc<Instance>, surface: &'a Arc<Surface<Window>>) -> Self {
         let debug_callback = Self::setup_debug_callback(&instance);
-        let (events_loop, surface) = Self::create_surface(&instance);
         let physical_device_index = Self::pick_physical_device(&instance, &surface);
         let (device, graphics_queue, present_queue) = Self::create_logical_device(
             &instance, &surface, physical_device_index);
@@ -137,10 +121,9 @@ impl VulkanApplication {
         let previous_frame_end = Some(Self::create_sync_objects(&device));
 
         Self {
-            instance,
+            instance: &instance,
             debug_callback,
-            events_loop,
-            surface,
+            surface: &surface,
             physical_device_index,
             device,
             graphics_queue,
@@ -156,54 +139,11 @@ impl VulkanApplication {
         }
     }
 
-    fn create_instance() -> Arc<Instance> {
-        if ENABLE_VALIDATION_LAYERS && !Self::check_validation_layer_support() {
-            println!("Validation layers requested, but not available!")
-        }
-
-        let supported_extensions = InstanceExtensions::supported_by_core()
-            .expect("failed to retrieve supported extensions");
-        println!("Supported extensions: {:?}", supported_extensions);
-
-        let app_info = ApplicationInfo {
-            application_name: Some("Hello Triangle".into()),
-            application_version: Some(Version { major: 1, minor: 0, patch: 0 }),
-            engine_name: Some("No Engine".into()),
-            engine_version: Some(Version { major: 1, minor: 0, patch: 0 }),
-        };
-
-        let required_extensions = Self::get_required_extensions();
-
-        if ENABLE_VALIDATION_LAYERS && Self::check_validation_layer_support() {
-            Instance::new(Some(&app_info), &required_extensions, VALIDATION_LAYERS.iter().cloned())
-                .expect("failed to create Vulkan instance")
-        } else {
-            Instance::new(Some(&app_info), &required_extensions, None)
-                .expect("failed to create Vulkan instance")
-        }
-
-    }
-
     fn create_sync_objects(device: &Arc<Device>) -> Box<dyn GpuFuture> {
         Box::new(sync::now(device.clone())) as Box<dyn GpuFuture>
     }
 
-    fn check_validation_layer_support() -> bool {
-        let layers: Vec<_> = layers_list().unwrap().map(|l| l.name().to_owned()).collect();
-        VALIDATION_LAYERS.iter()
-            .all(|layer_name| layers.contains(&layer_name.to_string()))
-    }
-
-    fn get_required_extensions() -> InstanceExtensions {
-        let mut extensions = vulkano_win::required_extensions();
-        if ENABLE_VALIDATION_LAYERS {
-            // TODO!: this should be ext_debug_utils (_report is deprecated), but that doesn't exist yet in vulkano
-            extensions.ext_debug_report = true;
-        }
-
-        extensions
-    }
-
+   
     fn setup_debug_callback(instance: &Arc<Instance>) -> Option<DebugCallback> {
         if !ENABLE_VALIDATION_LAYERS  {
             return None;
@@ -382,17 +322,6 @@ impl VulkanApplication {
         (device, graphics_queue, present_queue)
     }
 
-
-    fn create_surface(instance: &Arc<Instance>) -> (EventsLoop, Arc<Surface<Window>>) {
-        let events_loop = EventsLoop::new();
-        let surface = WindowBuilder::new()
-            .with_title("Vulkan")
-            .with_dimensions(LogicalSize::new(f64::from(WIDTH), f64::from(HEIGHT)))
-            .build_vk_surface(&events_loop, instance.clone())
-            .expect("failed to create window surface!");
-        (events_loop, surface)
-    }
-
     fn create_graphics_pipeline(device: &Arc<Device>, swap_chain_extent: [u32; 2], render_pass: &Arc<dyn RenderPassAbstract + Send + Sync>) -> Arc<dyn GraphicsPipelineAbstract + Send + Sync> {
         mod vertex_shader {
             vulkano_shaders::shader! {
@@ -520,7 +449,9 @@ impl VulkanApplication {
         }
 
         let (image_index, acquire_future) = match acquire_next_image(self.swap_chain.clone(), None) {
-            Ok(r) => r,
+            Ok(r) => {
+                r
+            },
             Err(AcquireError::OutOfDate) => {
                 self.recreate_swap_chain = true;
                 return;
