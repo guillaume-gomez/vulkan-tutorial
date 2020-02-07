@@ -1,25 +1,40 @@
 extern crate vulkano;
 extern crate winit;
 extern crate vulkano_win;
+extern crate cgmath;
+
+use vulkano_win::VkSurfaceBuild;
+
+use winit::{WindowBuilder, Window, dpi::LogicalSize, EventsLoop};
 
 
-use crate::ENABLE_VALIDATION_LAYERS;
+use vulkano::swapchain::Surface;
+use std::sync::Arc;
+
+use vulkano::instance::{
+    Instance,
+    InstanceExtensions,
+    ApplicationInfo,
+    Version,
+    layers_list,
+};
+
+
 use crate::WIDTH;
 use crate::HEIGHT;
 use std::iter::FromIterator;
-use std::sync::Arc;
+
 use std::collections::HashSet;
+use std::time::Instant;
 
 
-use winit::{Window};
+
 use vulkano::instance::{
-    Instance,
     PhysicalDevice,
 };
 use vulkano::instance::debug::{DebugCallback, MessageTypes};
 use vulkano::device::{Device, DeviceExtensions, Queue, Features};
 use vulkano::swapchain::{
-    Surface,
     Capabilities,
     ColorSpace,
     SupportedPresentModes,
@@ -60,9 +75,34 @@ use vulkano::buffer::{
     immutable::ImmutableBuffer,
     BufferUsage,
     BufferAccess,
+    CpuAccessibleBuffer
 };
 
+use cgmath::{
+    Rad,
+    Deg,
+    Matrix4,
+    Vector3,
+    Point3
+};
+
+#[cfg(all(debug_assertions))]
+const ENABLE_VALIDATION_LAYERS: bool = true;
+#[cfg(not(debug_assertions))]
+const ENABLE_VALIDATION_LAYERS: bool = false;
+
+const VALIDATION_LAYERS: &[&str] =  &[
+    "VK_LAYER_LUNARG_standard_validation"
+];
+
 use crate::Vertex;
+
+#[derive(Copy, Clone)]
+struct UniformBufferObject {
+    model: Matrix4<f32>,
+    view: Matrix4<f32>,
+    proj: Matrix4<f32>,
+}
 
 fn device_extensions() -> DeviceExtensions {
     DeviceExtensions {
@@ -86,10 +126,10 @@ impl QueueFamilyIndices {
 }
 
 
-pub struct VulkanApplication <'a> {
-    instance: &'a Arc<Instance>,
+pub struct VulkanApplication {
+    instance: Arc<Instance>,
     debug_callback: Option<DebugCallback>,
-    surface: &'a Arc<Surface<Window>>,
+    surface: Arc<Surface<Window>>,
     physical_device_index: usize,
     device: Arc<Device>,
     graphics_queue: Arc<Queue>,
@@ -99,14 +139,18 @@ pub struct VulkanApplication <'a> {
     render_pass: Arc<dyn RenderPassAbstract + Send + Sync>,
     graphics_pipeline: Arc<dyn GraphicsPipelineAbstract + Send + Sync>,
     swap_chain_framebuffers: Vec<Arc<dyn FramebufferAbstract + Send + Sync>>,
+    uniform_buffers: Vec<Arc<CpuAccessibleBuffer<UniformBufferObject>>>,
     command_buffers: Vec<Arc<AutoCommandBuffer>>,
     previous_frame_end: Option<Box<dyn GpuFuture>>,
     recreate_swap_chain: bool,
+    start_time: Instant,
 }
 
 
-impl<'a> VulkanApplication<'a> {
-    pub fn initialize(instance: &'a Arc<Instance>, surface: &'a Arc<Surface<Window>>) -> Self {
+impl VulkanApplication {
+    pub fn initialize(events_loop: &EventsLoop) -> Self {
+        let instance = Self::create_instance();
+        let surface = Self::create_surface(&instance, &events_loop);
         let debug_callback = Self::setup_debug_callback(&instance);
         let physical_device_index = Self::pick_physical_device(&instance, &surface);
         let (device, graphics_queue, present_queue) = Self::create_logical_device(
@@ -118,26 +162,86 @@ impl<'a> VulkanApplication<'a> {
         let render_pass = Self::create_render_pass(&device, swap_chain.format());
         let graphics_pipeline = Self::create_graphics_pipeline(&device, swap_chain.dimensions(), &render_pass);
         let swap_chain_framebuffers = Self::create_framebuffers(&swap_chain_images, &render_pass);
+        let start_time = Instant::now();
+        let uniform_buffers = Self::create_uniform_buffers(&device, swap_chain_images.len(), start_time, swap_chain.dimensions());
         let previous_frame_end = Some(Self::create_sync_objects(&device));
 
+
         Self {
-            instance: &instance,
+            instance,
+            surface,
             debug_callback,
-            surface: &surface,
             physical_device_index,
             device,
             graphics_queue,
             present_queue,
             swap_chain,
             swap_chain_images,
+            uniform_buffers,
             render_pass,
             graphics_pipeline,
             swap_chain_framebuffers,
             command_buffers: vec![],
             previous_frame_end,
-            recreate_swap_chain: true
+            recreate_swap_chain: true,
+            start_time
         }
     }
+
+
+    fn create_surface(instance: &Arc<Instance>, events_loop: &EventsLoop) -> Arc<Surface<Window>> {
+        WindowBuilder::new()
+        .with_title("Vulkan")
+        .with_dimensions(LogicalSize::new(f64::from(WIDTH), f64::from(HEIGHT)))
+        .build_vk_surface(&events_loop, instance.clone())
+        .expect("failed to create window surface!")
+        
+    }
+
+    fn create_instance() -> Arc<Instance> {
+        if ENABLE_VALIDATION_LAYERS && ! Self::check_validation_layer_support() {
+            println!("Validation layers requested, but not available!")
+        }
+
+        let supported_extensions = InstanceExtensions::supported_by_core()
+            .expect("failed to retrieve supported extensions");
+        println!("Supported extensions: {:?}", supported_extensions);
+
+        let app_info = ApplicationInfo {
+            application_name: Some("Hello Triangle".into()),
+            application_version: Some(Version { major: 1, minor: 0, patch: 0 }),
+            engine_name: Some("No Engine".into()),
+            engine_version: Some(Version { major: 1, minor: 0, patch: 0 }),
+        };
+
+        let required_extensions = Self::get_required_extensions();
+
+        if ENABLE_VALIDATION_LAYERS && Self::check_validation_layer_support() {
+            Instance::new(Some(&app_info), &required_extensions, VALIDATION_LAYERS.iter().cloned())
+                .expect("failed to create Vulkan instance")
+        } else {
+            Instance::new(Some(&app_info), &required_extensions, None)
+                .expect("failed to create Vulkan instance")
+        }
+
+    }
+
+    fn check_validation_layer_support() -> bool {
+        let layers: Vec<_> = layers_list().unwrap().map(|l| l.name().to_owned()).collect();
+        VALIDATION_LAYERS.iter()
+            .all(|layer_name| layers.contains(&layer_name.to_string()))
+    }
+
+    fn get_required_extensions() -> InstanceExtensions {
+        let mut extensions = vulkano_win::required_extensions();
+        if ENABLE_VALIDATION_LAYERS {
+            // TODO!: this should be ext_debug_utils (_report is deprecated), but that doesn't exist yet in vulkano
+            extensions.ext_debug_report = true;
+        }
+
+        extensions
+    }
+
 
     fn create_sync_objects(device: &Arc<Device>) -> Box<dyn GpuFuture> {
         Box::new(sync::now(device.clone())) as Box<dyn GpuFuture>
@@ -389,6 +493,31 @@ impl<'a> VulkanApplication<'a> {
         buffer
     }
 
+    fn create_uniform_buffers(
+        device: &Arc<Device>,
+        num_buffers: usize,
+        start_time: Instant,
+        dimensions_u32: [u32; 2]
+    ) -> Vec<Arc<CpuAccessibleBuffer<UniformBufferObject>>> {
+        let mut buffers = Vec::new();
+
+        let dimensions = [dimensions_u32[0] as f32, dimensions_u32[1] as f32];
+
+        let uniform_buffer = Self::update_uniform_buffer(start_time, dimensions);
+
+        for _ in 0..num_buffers {
+            let buffer = CpuAccessibleBuffer::from_data(
+                device.clone(),
+                BufferUsage::uniform_buffer_transfer_destination(),
+                uniform_buffer,
+            ).unwrap();
+
+            buffers.push(buffer);
+        }
+
+        buffers
+    }
+
     fn create_render_pass(device: &Arc<Device>, color_format: Format) -> Arc<dyn RenderPassAbstract + Send + Sync> {
         Arc::new(single_pass_renderpass!(device.clone(),
             attachments: {
@@ -439,6 +568,31 @@ impl<'a> VulkanApplication<'a> {
             })
             .collect();
     }
+
+    fn update_uniform_buffer(start_time: Instant, dimensions: [f32; 2]) -> UniformBufferObject {
+        let duration = Instant::now().duration_since(start_time);
+        let elapsed = (duration.as_secs() * 1000) + u64::from(duration.subsec_millis());
+
+        let model = Matrix4::from_angle_z(Rad::from(Deg(elapsed as f32 * 0.180)));
+
+        let view = Matrix4::look_at(
+            Point3::new(2.0, 2.0, 2.0),
+            Point3::new(0.0, 0.0, 0.0),
+            Vector3::new(0.0, 0.0, 1.0)
+        );
+
+        let mut proj = cgmath::perspective(
+            Rad::from(Deg(45.0)),
+            dimensions[0] as f32 / dimensions[1] as f32,
+            0.1,
+            10.0
+        );
+
+        proj.y.y *= -1.0;
+
+        UniformBufferObject { model, view, proj }
+    }
+
 
     pub fn draw_frame(&mut self, vertices: &Vec<Vertex>, indices: &Vec<u16>) {
         self.previous_frame_end.as_mut().unwrap().cleanup_finished();
