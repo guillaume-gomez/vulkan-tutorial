@@ -1,89 +1,60 @@
-use winit::{EventsLoop};
+use winit::event::{Event, VirtualKeyCode, ElementState, KeyboardInput, WindowEvent};
+use winit::event_loop::{EventLoop, ControlFlow};
 
-use winit::{WindowEvent, ElementState, VirtualKeyCode, KeyboardInput};
+// Constants
+const WINDOW_TITLE: &'static str = "00.Base Code";
+const WINDOW_WIDTH: u32 = 800;
+const WINDOW_HEIGHT: u32 = 600;
 
-use rand::prelude::*;
-#[macro_use]
-extern crate vulkano;
+struct VulkanApp;
 
+impl VulkanApp {
 
-const WIDTH: u32 = 800;
-const HEIGHT: u32 = 600;
+    fn init_window(event_loop: &EventLoop<()>) -> winit::window::Window {
+        winit::window::WindowBuilder::new()
+            .with_title(WINDOW_TITLE)
+            .with_inner_size(winit::dpi::LogicalSize::new(WINDOW_WIDTH, WINDOW_HEIGHT))
+            .build(event_loop)
+            .expect("Failed to create window.")
+    }
 
-mod vulkan_application;
-use vulkan_application::VulkanApplication;
+    pub fn main_loop(event_loop: EventLoop<()>) {
 
-#[derive(Default, Copy, Clone, Debug)]
-pub struct Vertex {
-    pos: [f32; 2],
-    color: [f32; 3],
-}
+        event_loop.run(move |event, _, control_flow| {
 
+            match event {
+                | Event::WindowEvent { event, .. } => {
+                    match event {
+                        | WindowEvent::CloseRequested => {
+                            *control_flow = ControlFlow::Exit
+                        },
+                        | WindowEvent::KeyboardInput { input, .. } => {
+                            match input {
+                                | KeyboardInput { virtual_keycode, state, .. } => {
+                                    match (virtual_keycode, state) {
+                                        | (Some(VirtualKeyCode::Escape), ElementState::Pressed) => {
+                                            dbg!();
+                                            *control_flow = ControlFlow::Exit
+                                        },
+                                        | _ => {},
+                                    }
+                                },
+                            }
+                        },
+                        | _ => {},
+                    }
+                },
+                _ => (),
+            }
 
-impl Vertex {
-    fn new(pos: [f32; 2], color: [f32; 3]) -> Self {
-        Self { pos, color }
+        })
     }
 }
-
-vulkano::impl_vertex!(Vertex, pos, color);
-
-pub fn vertices() -> Vec<Vertex> {
-
-    [
-        Vertex::new([-0.5, -0.5], [rand::thread_rng().gen(), 0.0, 0.0]),
-        Vertex::new([0.5, -0.5], [rand::thread_rng().gen(), 1.0, 0.0]),
-        Vertex::new([0.5, 0.5], [0.0, rand::thread_rng().gen(), 1.0]),
-        Vertex::new([-0.5, 0.5], [1.0, 1.0, rand::thread_rng().gen()]),
-        Vertex::new([rand::thread_rng().gen(), rand::thread_rng().gen()], [1.0, 1.0, 1.0])
-    ].to_vec()
-}
-
-pub fn indices() -> Vec<u16> {
-    [0, 1, 2, 2, 3, 0, 0, 5, 3].to_vec()
-}
-
-
 
 fn main() {
 
-    let mut events_loop = EventsLoop::new();
-    let mut app = VulkanApplication::initialize(&events_loop);
-    let mut my_vertices = vertices();
-    let indices = indices();
-    loop {
-        let mut done = false;
-        events_loop.run_forever(|event| {
-            app.draw_frame(&my_vertices, &indices);
+    let event_loop = EventLoop::new();
+    let _window = VulkanApp::init_window(&event_loop);
 
-            match event {
-                winit::Event::WindowEvent {
-                    event: winit::WindowEvent::CloseRequested,
-                    ..
-                } => {  done = true; winit::ControlFlow::Break},
-                winit::Event::WindowEvent {
-                    event: WindowEvent::KeyboardInput { input, .. },
-                    ..
-                } => match input {
-                    KeyboardInput {
-                        virtual_keycode: Some(key),
-                        state: ElementState::Pressed,
-                        ..
-                    } => match key {
-                        VirtualKeyCode::M => {
-                            my_vertices = vertices();
-                            winit::ControlFlow::Continue
-                        }
-                        _ => winit::ControlFlow::Continue,
-                    },
-                    _ => winit::ControlFlow::Continue,
-                },
-                _ => winit::ControlFlow::Continue,
-            }
-        });
-        if done {
-            return;
-        }
-    }
-
+    VulkanApp::main_loop(event_loop);
 }
