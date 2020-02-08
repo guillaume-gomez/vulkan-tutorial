@@ -1,8 +1,3 @@
-
-
-
-
-
 use winit::{EventsLoop};
 
 use winit::{WindowEvent, ElementState, VirtualKeyCode, KeyboardInput};
