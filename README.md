@@ -1,3 +1,3 @@
-# vulkano-tutorial
+# vulkan-tutorial
 
-based on https://github.com/bwasty/vulkan-tutorial-rs
+based on https://github.com/unknownue/vulkan-tutorial-rust
