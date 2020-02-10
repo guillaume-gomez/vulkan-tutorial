@@ -1,5 +1,5 @@
 [package]
-name = "vulkano-tutorial"
+name = "vulkan-tutorial"
 version = "0.1.0"
 authors = ["Guillaume Gomez <guillaume.gomez846@gmail.com>"]
 edition = "2018"
