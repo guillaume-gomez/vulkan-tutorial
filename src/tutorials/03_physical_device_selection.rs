@@ -1,4 +1,4 @@
-use vulkan_tutorial::{
+use vulkan_tutorial_rust::{
     utility, // the mod define some fixed functions that have been learned before.
     utility::constants::*,
     utility::share,
@@ -23,7 +23,7 @@ impl QueueFamilyIndices {
     }
 }
 
-pub struct VulkanApplication {
+struct VulkanApp {
 
     // vulkan stuff
     _entry: ash::Entry,
@@ -33,8 +33,8 @@ pub struct VulkanApplication {
     _physical_device: vk::PhysicalDevice,
 }
 
-impl VulkanApplication {
-    pub fn new() -> VulkanApplication {
+impl VulkanApp {
+    pub fn new() -> VulkanApp {
 
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
@@ -47,10 +47,10 @@ impl VulkanApplication {
 
         let (debug_utils_loader, debug_merssager) =
             utility::debug::setup_debug_utils(VALIDATION.is_enable, &entry, &instance);
-        let physical_device = VulkanApplication::pick_physical_device(&instance);
+        let physical_device = VulkanApp::pick_physical_device(&instance);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApplication {
+        VulkanApp {
 
             _entry: entry,
             instance,
@@ -74,7 +74,7 @@ impl VulkanApplication {
 
         let mut result = None;
         for &physical_device in physical_devices.iter() {
-            if VulkanApplication::is_physical_device_suitable(instance, physical_device) {
+            if VulkanApp::is_physical_device_suitable(instance, physical_device) {
                 if result.is_none() {
                     result = Some(physical_device)
                 }
@@ -169,7 +169,7 @@ impl VulkanApplication {
             }
         );
 
-        let indices = VulkanApplication::find_queue_family(instance, physical_device);
+        let indices = VulkanApp::find_queue_family(instance, physical_device);
 
         return indices.is_complete();
     }
@@ -208,7 +208,7 @@ impl VulkanApplication {
     }
 }
 
-impl Drop for VulkanApplication {
+impl Drop for VulkanApp {
     fn drop(&mut self) {
         unsafe {
             if VALIDATION.is_enable {
@@ -221,7 +221,7 @@ impl Drop for VulkanApplication {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApplication {
+impl VulkanApp {
     pub fn main_loop(mut self, event_loop: EventLoop<()>, window: winit::window::Window) {
 
          event_loop.run(move |event, _, control_flow| {
@@ -259,3 +259,13 @@ impl VulkanApplication {
         })
     }
 }
+
+fn main() {
+
+    let event_loop = EventLoop::new();
+    let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    let vulkan_app = VulkanApp::new();
+    vulkan_app.main_loop(event_loop, window);
+}
+// -------------------------------------------------------------------------------------------
