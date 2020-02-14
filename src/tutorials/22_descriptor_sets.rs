@@ -4,7 +4,7 @@ use vulkan_tutorial_rust::{
     utility::debug::*,
     utility::share,
     utility::structures::*,
-    utility::window::{ProgramProc, VulkanApp},
+    utility::window::{ProgramProc, VulkanApplication},
 };
 
 use ash::version::DeviceV1_0;
@@ -26,7 +26,7 @@ struct UniformBufferObject {
     proj: Matrix4<f32>,
 }
 
-struct VulkanApp22 {
+struct VulkanApplication22 {
     window: winit::window::Window,
 
     // vulkan stuff
@@ -80,8 +80,8 @@ struct VulkanApp22 {
     is_framebuffer_resized: bool,
 }
 
-impl VulkanApp22 {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp22 {
+impl VulkanApplication22 {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApplication22 {
         let window =
             utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -126,8 +126,8 @@ impl VulkanApp22 {
             &swapchain_stuff.swapchain_images,
         );
         let render_pass = share::v1::create_render_pass(&device, swapchain_stuff.swapchain_format);
-        let ubo_layout = VulkanApp22::create_descriptor_set_layout(&device);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp22::create_graphics_pipeline(
+        let ubo_layout = VulkanApplication22::create_descriptor_set_layout(&device);
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication22::create_graphics_pipeline(
             &device,
             render_pass,
             swapchain_stuff.swapchain_extent,
@@ -154,21 +154,21 @@ impl VulkanApp22 {
             graphics_queue,
             &RECT_INDICES_DATA,
         );
-        let (uniform_buffers, uniform_buffers_memory) = VulkanApp22::create_uniform_buffers(
+        let (uniform_buffers, uniform_buffers_memory) = VulkanApplication22::create_uniform_buffers(
             &device,
             &physical_device_memory_properties,
             swapchain_stuff.swapchain_images.len(),
         );
         let descriptor_pool =
-            VulkanApp22::create_descriptor_pool(&device, swapchain_stuff.swapchain_images.len());
-        let descriptor_sets = VulkanApp22::create_descriptor_sets(
+            VulkanApplication22::create_descriptor_pool(&device, swapchain_stuff.swapchain_images.len());
+        let descriptor_sets = VulkanApplication22::create_descriptor_sets(
             &device,
             descriptor_pool,
             ubo_layout,
             &uniform_buffers,
             swapchain_stuff.swapchain_images.len(),
         );
-        let command_buffers = VulkanApp22::create_command_buffers(
+        let command_buffers = VulkanApplication22::create_command_buffers(
             &device,
             command_pool,
             graphics_pipeline,
@@ -183,7 +183,7 @@ impl VulkanApp22 {
         let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp22 {
+        VulkanApplication22 {
             // winit stuff
             window,
 
@@ -438,7 +438,7 @@ impl VulkanApp22 {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp22 {
+impl VulkanApplication22 {
     fn create_descriptor_set_layout(device: &ash::Device) -> vk::DescriptorSetLayout {
         let ubo_layout_bindings = [vk::DescriptorSetLayoutBinding {
             binding: 0,
@@ -733,7 +733,7 @@ impl VulkanApp22 {
     }
 }
 
-impl Drop for VulkanApp22 {
+impl Drop for VulkanApplication22 {
     fn drop(&mut self) {
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
@@ -778,7 +778,7 @@ impl Drop for VulkanApp22 {
     }
 }
 
-impl VulkanApp for VulkanApp22 {
+impl VulkanApplication for VulkanApplication22 {
     fn draw_frame(&mut self, delta_time: f32) {
         let wait_fences = [self.in_flight_fences[self.current_frame]];
 
@@ -909,7 +909,7 @@ impl VulkanApp for VulkanApp22 {
             &self.swapchain_images,
         );
         self.render_pass = share::v1::create_render_pass(&self.device, self.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp22::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication22::create_graphics_pipeline(
             &self.device,
             self.render_pass,
             swapchain_stuff.swapchain_extent,
@@ -924,7 +924,7 @@ impl VulkanApp for VulkanApp22 {
             &self.swapchain_imageviews,
             self.swapchain_extent,
         );
-        self.command_buffers = VulkanApp22::create_command_buffers(
+        self.command_buffers = VulkanApplication22::create_command_buffers(
             &self.device,
             self.command_pool,
             self.graphics_pipeline,
@@ -976,7 +976,7 @@ impl VulkanApp for VulkanApp22 {
 
 fn main() {
     let program_proc = ProgramProc::new();
-    let vulkan_app = VulkanApp22::new(&program_proc.event_loop);
+    let vulkan_app = VulkanApplication22::new(&program_proc.event_loop);
 
     program_proc.main_loop(vulkan_app);
 }

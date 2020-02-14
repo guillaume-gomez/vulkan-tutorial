@@ -17,7 +17,7 @@ use std::ptr;
 // Constants
 const WINDOW_TITLE: &'static str = "16.Swap Chain Recreation";
 
-struct VulkanApp {
+struct VulkanApplication {
     window: winit::window::Window,
 
     // vulkan stuff
@@ -58,8 +58,8 @@ struct VulkanApp {
     is_framebuffer_resized: bool,
 }
 
-impl VulkanApp {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp {
+impl VulkanApplication {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApplication {
 
         let window = utility::window::init_window(event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -124,7 +124,7 @@ impl VulkanApp {
         let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp {
+        VulkanApplication {
             // winit stuff
             window,
 
@@ -338,7 +338,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
@@ -366,7 +366,7 @@ impl Drop for VulkanApp {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp {
+impl VulkanApplication {
 
     pub fn main_loop(mut self, event_loop: EventLoop<()>) {
 
@@ -416,7 +416,7 @@ fn main() {
 
     let event_loop = EventLoop::new();
 
-    let vulkan_app = VulkanApp::new(&event_loop);
+    let vulkan_app = VulkanApplication::new(&event_loop);
     vulkan_app.main_loop(event_loop);
 }
 // -------------------------------------------------------------------------------------------

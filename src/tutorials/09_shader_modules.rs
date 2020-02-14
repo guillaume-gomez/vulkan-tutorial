@@ -18,7 +18,7 @@ use std::ptr;
 // Constants
 const WINDOW_TITLE: &'static str = "09.Shader Modules";
 
-struct VulkanApp {
+struct VulkanApplication {
 
     _entry: ash::Entry,
     instance: ash::Instance,
@@ -41,8 +41,8 @@ struct VulkanApp {
     swapchain_imageviews: Vec<vk::ImageView>,
 }
 
-impl VulkanApp {
-    pub fn new(window: &winit::window::Window) -> VulkanApp {
+impl VulkanApplication {
+    pub fn new(window: &winit::window::Window) -> VulkanApplication {
 
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
@@ -82,10 +82,10 @@ impl VulkanApp {
             swapchain_stuff.swapchain_format,
             &swapchain_stuff.swapchain_images,
         );
-        let _pipeline = VulkanApp::create_graphics_pipeline(&device);
+        let _pipeline = VulkanApplication::create_graphics_pipeline(&device);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp {
+        VulkanApplication {
             _entry: entry,
             instance,
             surface: surface_stuff.surface,
@@ -110,12 +110,12 @@ impl VulkanApp {
 
     fn create_graphics_pipeline(device: &ash::Device) {
         let vert_shader_code =
-            VulkanApp::read_shader_code(Path::new("shaders/spv/09-shader-base.vert.spv"));
+            VulkanApplication::read_shader_code(Path::new("shaders/spv/09-shader-base.vert.spv"));
         let frag_shader_code =
-            VulkanApp::read_shader_code(Path::new("shaders/spv/09-shader-base.frag.spv"));
+            VulkanApplication::read_shader_code(Path::new("shaders/spv/09-shader-base.frag.spv"));
 
-        let vert_shader_module = VulkanApp::create_shader_module(device, vert_shader_code);
-        let frag_shader_module = VulkanApp::create_shader_module(device, frag_shader_code);
+        let vert_shader_module = VulkanApplication::create_shader_module(device, vert_shader_code);
+        let frag_shader_module = VulkanApplication::create_shader_module(device, frag_shader_code);
 
         let main_function_name = CString::new("main").unwrap(); // the beginning function name in shader code.
 
@@ -180,7 +180,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             for &imageview in self.swapchain_imageviews.iter() {
@@ -201,7 +201,7 @@ impl Drop for VulkanApp {
     }
 }
 
-impl VulkanApp {
+impl VulkanApplication {
     pub fn main_loop(mut self, event_loop: EventLoop<()>, window: winit::window::Window) {
 
          event_loop.run(move |event, _, control_flow| {
@@ -245,7 +245,7 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    let vulkan_app = VulkanApp::new(&window);
+    let vulkan_app = VulkanApplication::new(&window);
     vulkan_app.main_loop(event_loop, window);
 }
 // -------------------------------------------------------------------------------------------

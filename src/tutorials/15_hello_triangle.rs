@@ -23,7 +23,7 @@ struct SyncObjects {
     inflight_fences: Vec<vk::Fence>,
 }
 
-struct VulkanApp {
+struct VulkanApplication {
     window: winit::window::Window,
     // vulkan stuff
     _entry: ash::Entry,
@@ -60,8 +60,8 @@ struct VulkanApp {
     current_frame: usize,
 }
 
-impl VulkanApp {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp {
+impl VulkanApplication {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApplication {
 
         let window = utility::window::init_window(event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -103,7 +103,7 @@ impl VulkanApp {
             swapchain_stuff.swapchain_format,
             &swapchain_stuff.swapchain_images,
         );
-        let render_pass = VulkanApp::create_render_pass(&device, swapchain_stuff.swapchain_format);
+        let render_pass = VulkanApplication::create_render_pass(&device, swapchain_stuff.swapchain_format);
         let (graphics_pipeline, pipeline_layout) = share::v1::create_graphics_pipeline(
             &device,
             render_pass,
@@ -124,10 +124,10 @@ impl VulkanApp {
             render_pass,
             swapchain_stuff.swapchain_extent,
         );
-        let sync_ojbects = VulkanApp::create_sync_objects(&device);
+        let sync_ojbects = VulkanApplication::create_sync_objects(&device);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp {
+        VulkanApplication {
             window,
             // vulkan stuff
             _entry: entry,
@@ -343,7 +343,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
@@ -384,7 +384,7 @@ impl Drop for VulkanApp {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp {
+impl VulkanApplication {
 
     pub fn main_loop(mut self, event_loop: EventLoop<()>) {
 
@@ -434,7 +434,7 @@ fn main() {
 
     let event_loop = EventLoop::new();
 
-    let vulkan_app = VulkanApp::new(&event_loop);
+    let vulkan_app = VulkanApplication::new(&event_loop);
     vulkan_app.main_loop(event_loop);
 }
 // -------------------------------------------------------------------------------------------

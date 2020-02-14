@@ -14,21 +14,21 @@ use winit::window::Window;
 // Constants
 const WINDOW_TITLE: &'static str = "01.Instance Creation";
 
-struct VulkanApp {
+struct VulkanApplication {
     _entry: ash::Entry,
     instance: ash::Instance,
 }
 
-impl VulkanApp {
+impl VulkanApplication {
 
-    pub fn new() -> VulkanApp {
+    pub fn new() -> VulkanApplication {
 
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
-        let instance = VulkanApp::create_instance(&entry);
+        let instance = VulkanApplication::create_instance(&entry);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp {
+        VulkanApplication {
             _entry: entry,
             instance,
         }
@@ -120,7 +120,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             self.instance.destroy_instance(None);
@@ -131,8 +131,8 @@ impl Drop for VulkanApp {
 fn main() {
 
     let event_loop = EventLoop::new();
-    let window = VulkanApp::init_window(&event_loop);
+    let window = VulkanApplication::init_window(&event_loop);
 
-    let vulkan_app = VulkanApp::new();
+    let vulkan_app = VulkanApplication::new();
     vulkan_app.main_loop(event_loop, window);
 }

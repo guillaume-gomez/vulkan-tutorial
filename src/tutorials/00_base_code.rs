@@ -7,9 +7,9 @@ const WINDOW_TITLE: &'static str = "00.Base Code";
 const WINDOW_WIDTH: u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 
-struct VulkanApp;
+struct VulkanApplication;
 
-impl VulkanApp {
+impl VulkanApplication {
 
     fn init_window(event_loop: &EventLoop<()>) -> winit::window::Window {
         winit::window::WindowBuilder::new()
@@ -55,7 +55,7 @@ impl VulkanApp {
 fn main() {
 
     let event_loop = EventLoop::new();
-    let _window = VulkanApp::init_window(&event_loop);
+    let _window = VulkanApplication::init_window(&event_loop);
 
-    VulkanApp::main_loop(event_loop);
+    VulkanApplication::main_loop(event_loop);
 }

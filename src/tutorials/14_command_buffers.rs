@@ -17,7 +17,7 @@ use std::ptr;
 // Constants
 const WINDOW_TITLE: &'static str = "14.Command Buffers";
 
-struct VulkanApp {
+struct VulkanApplication {
 
     _entry: ash::Entry,
     instance: ash::Instance,
@@ -48,8 +48,8 @@ struct VulkanApp {
     _command_buffers: Vec<vk::CommandBuffer>,
 }
 
-impl VulkanApp {
-    pub fn new(window: &winit::window::Window) -> VulkanApp {
+impl VulkanApplication {
+    pub fn new(window: &winit::window::Window) -> VulkanApplication {
        
         let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(
@@ -100,8 +100,8 @@ impl VulkanApp {
             &swapchain_imageviews,
             swapchain_stuff.swapchain_extent,
         );
-        let command_pool = VulkanApp::create_command_pool(&device, &family_indices);
-        let command_buffers = VulkanApp::create_command_buffers(
+        let command_pool = VulkanApplication::create_command_pool(&device, &family_indices);
+        let command_buffers = VulkanApplication::create_command_buffers(
             &device,
             command_pool,
             graphics_pipeline,
@@ -111,7 +111,7 @@ impl VulkanApp {
         );
 
         // cleanup(); the 'drop' function will take care of it.
-         VulkanApp {
+         VulkanApplication {
             _entry: entry,
             instance,
             surface: surface_stuff.surface,
@@ -244,7 +244,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             self.device.destroy_command_pool(self.command_pool, None);
@@ -277,7 +277,7 @@ impl Drop for VulkanApp {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp {
+impl VulkanApplication {
     pub fn main_loop(mut self, event_loop: EventLoop<()>, window: winit::window::Window) {
 
          event_loop.run(move |event, _, control_flow| {
@@ -321,7 +321,7 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    let vulkan_app = VulkanApp::new(&window);
+    let vulkan_app = VulkanApplication::new(&window);
     vulkan_app.main_loop(event_loop, window);
 }
 // -------------------------------------------------------------------------------------------

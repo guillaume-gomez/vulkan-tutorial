@@ -41,7 +41,7 @@ struct SurfaceStuff {
     surface: vk::SurfaceKHR,
 }
 
-struct VulkanApp {
+struct VulkanApplication {
     _entry: ash::Entry,
     instance: ash::Instance,
     surface_loader: ash::extensions::khr::Surface,
@@ -54,8 +54,8 @@ struct VulkanApp {
     _present_queue: vk::Queue,
 }
 
-impl VulkanApp {
-    pub fn new(window: &winit::window::Window) -> VulkanApp {
+impl VulkanApplication {
+    pub fn new(window: &winit::window::Window) -> VulkanApplication {
 
         let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(
@@ -66,9 +66,9 @@ impl VulkanApp {
         );
         let (debug_utils_loader, debug_merssager) =
             utility::debug::setup_debug_utils(VALIDATION.is_enable, &entry, &instance);
-        let surface_stuff = VulkanApp::create_surface(&entry, &instance, &window);
-        let physical_device = VulkanApp::pick_physical_device(&instance, &surface_stuff);
-        let (device, family_indices) = VulkanApp::create_logical_device(
+        let surface_stuff = VulkanApplication::create_surface(&entry, &instance, &window);
+        let physical_device = VulkanApplication::pick_physical_device(&instance, &surface_stuff);
+        let (device, family_indices) = VulkanApplication::create_logical_device(
             &instance,
             physical_device,
             &VALIDATION,
@@ -80,7 +80,7 @@ impl VulkanApp {
             unsafe { device.get_device_queue(family_indices.present_family.unwrap(), 0) };
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp {
+        VulkanApplication {
             _entry: entry,
             instance,
             surface: surface_stuff.surface,
@@ -122,7 +122,7 @@ impl VulkanApp {
         };
 
         let result = physical_devices.iter().find(|physical_device| {
-            VulkanApp::is_physical_device_suitable(instance, **physical_device, surface_stuff)
+            VulkanApplication::is_physical_device_suitable(instance, **physical_device, surface_stuff)
         });
 
         match result {
@@ -140,7 +140,7 @@ impl VulkanApp {
             unsafe { instance.get_physical_device_properties(physical_device) };
         let _device_features = unsafe { instance.get_physical_device_features(physical_device) };
 
-        let indices = VulkanApp::find_queue_family(instance, physical_device, surface_stuff);
+        let indices = VulkanApplication::find_queue_family(instance, physical_device, surface_stuff);
 
         return indices.is_complete();
     }
@@ -151,7 +151,7 @@ impl VulkanApp {
         validation: &ValidationInfo,
         surface_stuff: &SurfaceStuff,
     ) -> (ash::Device, QueueFamilyIndices) {
-        let indices = VulkanApp::find_queue_family(instance, physical_device, surface_stuff);
+        let indices = VulkanApplication::find_queue_family(instance, physical_device, surface_stuff);
 
         use std::collections::HashSet;
         let mut unique_queue_families = HashSet::new();
@@ -262,7 +262,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             self.device.destroy_device(None);
@@ -279,7 +279,7 @@ impl Drop for VulkanApp {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp {
+impl VulkanApplication {
     pub fn main_loop(mut self, event_loop: EventLoop<()>, window: winit::window::Window) {
 
          event_loop.run(move |event, _, control_flow| {
@@ -323,7 +323,7 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    let vulkan_app = VulkanApp::new(&window);
+    let vulkan_app = VulkanApplication::new(&window);
     vulkan_app.main_loop(event_loop, window);
 }
 // -------------------------------------------------------------------------------------------

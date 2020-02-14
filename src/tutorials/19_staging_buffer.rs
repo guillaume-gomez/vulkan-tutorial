@@ -67,7 +67,7 @@ const VERTICES_DATA: [Vertex; 3] = [
     },
 ];
 
-struct VulkanApp {
+struct VulkanApplication {
     window: winit::window::Window,
 
     // vulkan stuff
@@ -111,8 +111,8 @@ struct VulkanApp {
     is_framebuffer_resized: bool,
 }
 
-impl VulkanApp {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp {
+impl VulkanApplication {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApplication {
 
         let window = utility::window::init_window(event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -155,7 +155,7 @@ impl VulkanApp {
             &swapchain_stuff.swapchain_images,
         );
         let render_pass = share::v1::create_render_pass(&device, swapchain_stuff.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication::create_graphics_pipeline(
             &device,
             render_pass,
             swapchain_stuff.swapchain_extent,
@@ -167,14 +167,14 @@ impl VulkanApp {
             swapchain_stuff.swapchain_extent,
         );
         let command_pool = share::v1::create_command_pool(&device, &queue_family);
-        let (vertex_buffer, vertex_buffer_memory) = VulkanApp::create_vertex_buffer(
+        let (vertex_buffer, vertex_buffer_memory) = VulkanApplication::create_vertex_buffer(
             &instance,
             &device,
             physical_device,
             command_pool,
             graphics_queue,
         );
-        let command_buffers = VulkanApp::create_command_buffers(
+        let command_buffers = VulkanApplication::create_command_buffers(
             &device,
             command_pool,
             graphics_pipeline,
@@ -186,7 +186,7 @@ impl VulkanApp {
         let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp {
+        VulkanApplication {
             // winit stuff
             window,
 
@@ -243,7 +243,7 @@ impl VulkanApp {
         let device_memory_properties =
             unsafe { instance.get_physical_device_memory_properties(physical_device) };
 
-        let (staging_buffer, staging_buffer_memory) = VulkanApp::create_buffer(
+        let (staging_buffer, staging_buffer_memory) = VulkanApplication::create_buffer(
             device,
             buffer_size,
             vk::BufferUsageFlags::TRANSFER_SRC,
@@ -266,7 +266,7 @@ impl VulkanApp {
             device.unmap_memory(staging_buffer_memory);
         }
 
-        let (vertex_buffer, vertex_buffer_memory) = VulkanApp::create_buffer(
+        let (vertex_buffer, vertex_buffer_memory) = VulkanApplication::create_buffer(
             device,
             buffer_size,
             vk::BufferUsageFlags::TRANSFER_DST | vk::BufferUsageFlags::VERTEX_BUFFER,
@@ -274,7 +274,7 @@ impl VulkanApp {
             &device_memory_properties,
         );
 
-        VulkanApp::copy_buffer(
+        VulkanApplication::copy_buffer(
             device,
             submit_queue,
             command_pool,
@@ -316,7 +316,7 @@ impl VulkanApp {
         };
 
         let mem_requirements = unsafe { device.get_buffer_memory_requirements(buffer) };
-        let memory_type = VulkanApp::find_memory_type(
+        let memory_type = VulkanApplication::find_memory_type(
             mem_requirements.memory_type_bits,
             required_memory_properties,
             device_memory_properties,
@@ -434,7 +434,7 @@ impl VulkanApp {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp {
+impl VulkanApplication {
     fn create_command_buffers(
         device: &ash::Device,
         command_pool: vk::CommandPool,
@@ -863,7 +863,7 @@ impl VulkanApp {
             &self.swapchain_images,
         );
         self.render_pass = share::v1::create_render_pass(&self.device, self.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication::create_graphics_pipeline(
             &self.device,
             self.render_pass,
             swapchain_stuff.swapchain_extent,
@@ -877,7 +877,7 @@ impl VulkanApp {
             &self.swapchain_imageviews,
             self.swapchain_extent,
         );
-        self.command_buffers = VulkanApp::create_command_buffers(
+        self.command_buffers = VulkanApplication::create_command_buffers(
             &self.device,
             self.command_pool,
             self.graphics_pipeline,
@@ -908,7 +908,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
@@ -938,7 +938,7 @@ impl Drop for VulkanApp {
     }
 }
 
-impl VulkanApp {
+impl VulkanApplication {
 
     pub fn main_loop(mut self, event_loop: EventLoop<()>) {
 
@@ -995,7 +995,7 @@ fn main() {
 
     let event_loop = EventLoop::new();
 
-    let vulkan_app = VulkanApp::new(&event_loop);
+    let vulkan_app = VulkanApplication::new(&event_loop);
     vulkan_app.main_loop(event_loop);
 }
 // -------------------------------------------------------------------------------------------

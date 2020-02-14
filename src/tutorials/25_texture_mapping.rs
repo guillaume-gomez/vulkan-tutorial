@@ -4,7 +4,7 @@ use vulkan_tutorial_rust::{
     utility::debug::*,
     utility::share,
     utility::structures::*,
-    utility::window::{ProgramProc, VulkanApp},
+    utility::window::{ProgramProc, VulkanApplication},
 };
 
 use ash::version::DeviceV1_0;
@@ -83,7 +83,7 @@ pub const RECT_TEX_COORD_VERTICES_DATA: [VertexV2; 4] = [
     },
 ];
 
-struct VulkanApp25 {
+struct VulkanApplication25 {
     window: winit::window::Window,
 
     // vulkan stuff
@@ -142,8 +142,8 @@ struct VulkanApp25 {
     is_framebuffer_resized: bool,
 }
 
-impl VulkanApp25 {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp25 {
+impl VulkanApplication25 {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApplication25 {
         let window =
             utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -188,8 +188,8 @@ impl VulkanApp25 {
             &swapchain_stuff.swapchain_images,
         );
         let render_pass = share::v1::create_render_pass(&device, swapchain_stuff.swapchain_format);
-        let ubo_layout = VulkanApp25::create_descriptor_set_layout(&device);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp25::create_graphics_pipeline(
+        let ubo_layout = VulkanApplication25::create_descriptor_set_layout(&device);
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication25::create_graphics_pipeline(
             &device,
             render_pass,
             swapchain_stuff.swapchain_extent,
@@ -231,8 +231,8 @@ impl VulkanApp25 {
             swapchain_stuff.swapchain_images.len(),
         );
         let descriptor_pool =
-            VulkanApp25::create_descriptor_pool(&device, swapchain_stuff.swapchain_images.len());
-        let descriptor_sets = VulkanApp25::create_descriptor_sets(
+            VulkanApplication25::create_descriptor_pool(&device, swapchain_stuff.swapchain_images.len());
+        let descriptor_sets = VulkanApplication25::create_descriptor_sets(
             &device,
             descriptor_pool,
             ubo_layout,
@@ -241,7 +241,7 @@ impl VulkanApp25 {
             texture_sampler,
             swapchain_stuff.swapchain_images.len(),
         );
-        let command_buffers = VulkanApp25::create_command_buffers(
+        let command_buffers = VulkanApplication25::create_command_buffers(
             &device,
             command_pool,
             graphics_pipeline,
@@ -256,7 +256,7 @@ impl VulkanApp25 {
         let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp25 {
+        VulkanApplication25 {
             // winit stuff
             window,
 
@@ -483,7 +483,7 @@ impl VulkanApp25 {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp25 {
+impl VulkanApplication25 {
     fn create_command_buffers(
         device: &ash::Device,
         command_pool: vk::CommandPool,
@@ -829,7 +829,7 @@ impl VulkanApp25 {
     }
 }
 
-impl Drop for VulkanApp25 {
+impl Drop for VulkanApplication25 {
     fn drop(&mut self) {
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
@@ -881,7 +881,7 @@ impl Drop for VulkanApp25 {
     }
 }
 
-impl VulkanApp for VulkanApp25 {
+impl VulkanApplication for VulkanApplication25 {
     fn draw_frame(&mut self, delta_time: f32) {
         let wait_fences = [self.in_flight_fences[self.current_frame]];
 
@@ -1012,7 +1012,7 @@ impl VulkanApp for VulkanApp25 {
             &self.swapchain_images,
         );
         self.render_pass = share::v1::create_render_pass(&self.device, self.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp25::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication25::create_graphics_pipeline(
             &self.device,
             self.render_pass,
             swapchain_stuff.swapchain_extent,
@@ -1027,7 +1027,7 @@ impl VulkanApp for VulkanApp25 {
             &self.swapchain_imageviews,
             self.swapchain_extent,
         );
-        self.command_buffers = VulkanApp25::create_command_buffers(
+        self.command_buffers = VulkanApplication25::create_command_buffers(
             &self.device,
             self.command_pool,
             self.graphics_pipeline,
@@ -1079,7 +1079,7 @@ impl VulkanApp for VulkanApp25 {
 
 fn main() {
     let program_proc = ProgramProc::new();
-    let vulkan_app = VulkanApp25::new(&program_proc.event_loop);
+    let vulkan_app = VulkanApplication25::new(&program_proc.event_loop);
 
     program_proc.main_loop(vulkan_app);
 }

@@ -4,7 +4,7 @@ use vulkan_tutorial_rust::{
     utility::debug::*,
     utility::share,
     utility::structures::*,
-    utility::window::{ProgramProc, VulkanApp},
+    utility::window::{ProgramProc, VulkanApplication},
 };
 
 use ash::version::DeviceV1_0;
@@ -21,7 +21,7 @@ use std::ptr;
 const WINDOW_TITLE: &'static str = "23.Texture Image";
 const TEXTURE_PATH: &'static str = "assets/texture.jpg";
 
-struct VulkanApp23 {
+struct VulkanApplication23 {
     window: winit::window::Window,
 
     // vulkan stuff
@@ -78,8 +78,8 @@ struct VulkanApp23 {
     is_framebuffer_resized: bool,
 }
 
-impl VulkanApp23 {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp23 {
+impl VulkanApplication23 {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApplication23 {
         let window =
             utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -125,7 +125,7 @@ impl VulkanApp23 {
         );
         let render_pass = share::v1::create_render_pass(&device, swapchain_stuff.swapchain_format);
         let ubo_layout = share::v1::create_descriptor_set_layout(&device);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp23::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication23::create_graphics_pipeline(
             &device,
             render_pass,
             swapchain_stuff.swapchain_extent,
@@ -138,7 +138,7 @@ impl VulkanApp23 {
             swapchain_stuff.swapchain_extent,
         );
         let command_pool = share::v1::create_command_pool(&device, &queue_family);
-        let (texture_image, texture_image_memory) = VulkanApp23::create_texture_image(
+        let (texture_image, texture_image_memory) = VulkanApplication23::create_texture_image(
             &device,
             command_pool,
             graphics_queue,
@@ -173,7 +173,7 @@ impl VulkanApp23 {
             &uniform_buffers,
             swapchain_stuff.swapchain_images.len(),
         );
-        let command_buffers = VulkanApp23::create_command_buffers(
+        let command_buffers = VulkanApplication23::create_command_buffers(
             &device,
             command_pool,
             graphics_pipeline,
@@ -188,7 +188,7 @@ impl VulkanApp23 {
         let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp23 {
+        VulkanApplication23 {
             // winit stuff
             window,
 
@@ -309,7 +309,7 @@ impl VulkanApp23 {
             device.unmap_memory(staging_buffer_memory);
         }
 
-        let (texture_image, texture_image_memory) = VulkanApp23::create_image(
+        let (texture_image, texture_image_memory) = VulkanApplication23::create_image(
             device,
             image_width,
             image_height,
@@ -320,7 +320,7 @@ impl VulkanApp23 {
             device_memory_properties,
         );
 
-        VulkanApp23::transition_image_layout(
+        VulkanApplication23::transition_image_layout(
             device,
             command_pool,
             submit_queue,
@@ -330,7 +330,7 @@ impl VulkanApp23 {
             vk::ImageLayout::TRANSFER_DST_OPTIMAL,
         );
 
-        VulkanApp23::copy_buffer_to_image(
+        VulkanApplication23::copy_buffer_to_image(
             device,
             command_pool,
             submit_queue,
@@ -340,7 +340,7 @@ impl VulkanApp23 {
             image_height,
         );
 
-        VulkanApp23::transition_image_layout(
+        VulkanApplication23::transition_image_layout(
             device,
             command_pool,
             submit_queue,
@@ -504,7 +504,7 @@ impl VulkanApp23 {
         old_layout: vk::ImageLayout,
         new_layout: vk::ImageLayout,
     ) {
-        let command_buffer = VulkanApp23::begin_single_time_command(device, command_pool);
+        let command_buffer = VulkanApplication23::begin_single_time_command(device, command_pool);
 
         let src_access_mask;
         let dst_access_mask;
@@ -560,7 +560,7 @@ impl VulkanApp23 {
             );
         }
 
-        VulkanApp23::end_single_time_command(device, command_pool, submit_queue, command_buffer);
+        VulkanApplication23::end_single_time_command(device, command_pool, submit_queue, command_buffer);
     }
 
     fn copy_buffer_to_image(
@@ -572,7 +572,7 @@ impl VulkanApp23 {
         width: u32,
         height: u32,
     ) {
-        let command_buffer = VulkanApp23::begin_single_time_command(device, command_pool);
+        let command_buffer = VulkanApplication23::begin_single_time_command(device, command_pool);
 
         let buffer_image_regions = [vk::BufferImageCopy {
             image_subresource: vk::ImageSubresourceLayers {
@@ -602,7 +602,7 @@ impl VulkanApp23 {
             );
         }
 
-        VulkanApp23::end_single_time_command(device, command_pool, submit_queue, command_buffer);
+        VulkanApplication23::end_single_time_command(device, command_pool, submit_queue, command_buffer);
     }
 
     fn create_command_buffers(
@@ -711,7 +711,7 @@ impl VulkanApp23 {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp23 {
+impl VulkanApplication23 {
     fn update_uniform_buffer(&mut self, current_image: usize, delta_time: f32) {
         self.uniform_transform.model =
             Matrix4::from_axis_angle(Vector3::new(0.0, 0.0, 1.0), Deg(90.0) * delta_time)
@@ -957,7 +957,7 @@ impl VulkanApp23 {
     }
 }
 
-impl Drop for VulkanApp23 {
+impl Drop for VulkanApplication23 {
     fn drop(&mut self) {
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
@@ -1005,7 +1005,7 @@ impl Drop for VulkanApp23 {
     }
 }
 
-impl VulkanApp for VulkanApp23 {
+impl VulkanApplication for VulkanApplication23 {
     fn draw_frame(&mut self, delta_time: f32) {
         let wait_fences = [self.in_flight_fences[self.current_frame]];
 
@@ -1136,7 +1136,7 @@ impl VulkanApp for VulkanApp23 {
             &self.swapchain_images,
         );
         self.render_pass = share::v1::create_render_pass(&self.device, self.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp23::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication23::create_graphics_pipeline(
             &self.device,
             self.render_pass,
             swapchain_stuff.swapchain_extent,
@@ -1151,7 +1151,7 @@ impl VulkanApp for VulkanApp23 {
             &self.swapchain_imageviews,
             self.swapchain_extent,
         );
-        self.command_buffers = VulkanApp23::create_command_buffers(
+        self.command_buffers = VulkanApplication23::create_command_buffers(
             &self.device,
             self.command_pool,
             self.graphics_pipeline,
@@ -1203,7 +1203,7 @@ impl VulkanApp for VulkanApp23 {
 
 fn main() {
     let program_proc = ProgramProc::new();
-    let vulkan_app = VulkanApp23::new(&program_proc.event_loop);
+    let vulkan_app = VulkanApplication23::new(&program_proc.event_loop);
 
     program_proc.main_loop(vulkan_app);
 }

@@ -4,7 +4,7 @@ use vulkan_tutorial_rust::{
     utility::debug::*,
     utility::share,
     utility::structures::*,
-    utility::window::{ProgramProc, VulkanApp},
+    utility::window::{ProgramProc, VulkanApplication},
 };
 
 use ash::version::DeviceV1_0;
@@ -62,7 +62,7 @@ impl VertexV3 {
     }
 }
 
-struct VulkanApp27 {
+struct VulkanApplication27 {
     window: winit::window::Window,
 
     // vulkan stuff
@@ -129,8 +129,8 @@ struct VulkanApp27 {
     is_framebuffer_resized: bool,
 }
 
-impl VulkanApp27 {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp27 {
+impl VulkanApplication27 {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApplication27 {
         let window =
             utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -174,14 +174,14 @@ impl VulkanApp27 {
             swapchain_stuff.swapchain_format,
             &swapchain_stuff.swapchain_images,
         );
-        let render_pass = VulkanApp27::create_render_pass(
+        let render_pass = VulkanApplication27::create_render_pass(
             &instance,
             &device,
             physical_device,
             swapchain_stuff.swapchain_format,
         );
         let ubo_layout = share::v2::create_descriptor_set_layout(&device);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp27::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication27::create_graphics_pipeline(
             &device,
             render_pass,
             swapchain_stuff.swapchain_extent,
@@ -198,14 +198,14 @@ impl VulkanApp27 {
             &physical_device_memory_properties,
             vk::SampleCountFlags::TYPE_1,
         );
-        let swapchain_framebuffers = VulkanApp27::create_framebuffers(
+        let swapchain_framebuffers = VulkanApplication27::create_framebuffers(
             &device,
             render_pass,
             &swapchain_imageviews,
             depth_image_view,
             swapchain_stuff.swapchain_extent,
         );
-        let (vertices, indices) = VulkanApp27::load_model(&Path::new(MODEL_PATH));
+        let (vertices, indices) = VulkanApplication27::load_model(&Path::new(MODEL_PATH));
         let (texture_image, texture_image_memory) = share::v1::create_texture_image(
             &device,
             command_pool,
@@ -245,7 +245,7 @@ impl VulkanApp27 {
             texture_sampler,
             swapchain_stuff.swapchain_images.len(),
         );
-        let command_buffers = VulkanApp27::create_command_buffers(
+        let command_buffers = VulkanApplication27::create_command_buffers(
             &device,
             command_pool,
             graphics_pipeline,
@@ -261,7 +261,7 @@ impl VulkanApp27 {
         let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp27 {
+        VulkanApplication27 {
             // winit stuff
             window,
 
@@ -385,7 +385,7 @@ impl VulkanApp27 {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp27 {
+impl VulkanApplication27 {
     fn create_render_pass(
         instance: &ash::Instance,
         device: &ash::Device,
@@ -867,7 +867,7 @@ impl VulkanApp27 {
     }
 }
 
-impl Drop for VulkanApp27 {
+impl Drop for VulkanApplication27 {
     fn drop(&mut self) {
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
@@ -919,7 +919,7 @@ impl Drop for VulkanApp27 {
     }
 }
 
-impl VulkanApp for VulkanApp27 {
+impl VulkanApplication for VulkanApplication27 {
     fn draw_frame(&mut self, delta_time: f32) {
         let wait_fences = [self.in_flight_fences[self.current_frame]];
 
@@ -1049,13 +1049,13 @@ impl VulkanApp for VulkanApp27 {
             self.swapchain_format,
             &self.swapchain_images,
         );
-        self.render_pass = VulkanApp27::create_render_pass(
+        self.render_pass = VulkanApplication27::create_render_pass(
             &self.instance,
             &self.device,
             self.physical_device,
             self.swapchain_format,
         );
-        let (graphics_pipeline, pipeline_layout) = VulkanApp27::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication27::create_graphics_pipeline(
             &self.device,
             self.render_pass,
             swapchain_stuff.swapchain_extent,
@@ -1078,14 +1078,14 @@ impl VulkanApp for VulkanApp27 {
         self.depth_image_view = depth_resources.1;
         self.depth_image_memory = depth_resources.2;
 
-        self.swapchain_framebuffers = VulkanApp27::create_framebuffers(
+        self.swapchain_framebuffers = VulkanApplication27::create_framebuffers(
             &self.device,
             self.render_pass,
             &self.swapchain_imageviews,
             self.depth_image_view,
             self.swapchain_extent,
         );
-        self.command_buffers = VulkanApp27::create_command_buffers(
+        self.command_buffers = VulkanApplication27::create_command_buffers(
             &self.device,
             self.command_pool,
             self.graphics_pipeline,
@@ -1142,7 +1142,7 @@ impl VulkanApp for VulkanApp27 {
 
 fn main() {
     let program_proc = ProgramProc::new();
-    let vulkan_app = VulkanApp27::new(&program_proc.event_loop);
+    let vulkan_app = VulkanApplication27::new(&program_proc.event_loop);
 
     program_proc.main_loop(vulkan_app);
 }

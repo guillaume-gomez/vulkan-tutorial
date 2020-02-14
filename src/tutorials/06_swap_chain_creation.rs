@@ -59,7 +59,7 @@ struct SwapChainSupportDetail {
     present_modes: Vec<vk::PresentModeKHR>,
 }
 
-struct VulkanApp {
+struct VulkanApplication {
 
     _entry: ash::Entry,
     instance: ash::Instance,
@@ -81,8 +81,8 @@ struct VulkanApp {
     _swapchain_extent: vk::Extent2D,
 }
 
-impl VulkanApp {
-    pub fn new(window: &winit::window::Window) -> VulkanApp {
+impl VulkanApplication {
+    pub fn new(window: &winit::window::Window) -> VulkanApplication {
 
         let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(
@@ -91,11 +91,11 @@ impl VulkanApp {
             VALIDATION.is_enable,
             &VALIDATION.required_validation_layers.to_vec(),
         );
-        let surface_stuff = VulkanApp::create_surface(&entry, &instance, &window);
+        let surface_stuff = VulkanApplication::create_surface(&entry, &instance, &window);
         let (debug_utils_loader, debug_merssager) =
             utility::debug::setup_debug_utils(VALIDATION.is_enable, &entry, &instance);
-        let physical_device = VulkanApp::pick_physical_device(&instance, &surface_stuff);
-        let (device, family_indices) = VulkanApp::create_logical_device(
+        let physical_device = VulkanApplication::pick_physical_device(&instance, &surface_stuff);
+        let (device, family_indices) = VulkanApplication::create_logical_device(
             &instance,
             physical_device,
             &VALIDATION,
@@ -105,7 +105,7 @@ impl VulkanApp {
             unsafe { device.get_device_queue(family_indices.graphics_family.unwrap(), 0) };
         let present_queue =
             unsafe { device.get_device_queue(family_indices.present_family.unwrap(), 0) };
-        let swapchain_stuff = VulkanApp::create_swapchain(
+        let swapchain_stuff = VulkanApplication::create_swapchain(
             &instance,
             &device,
             physical_device,
@@ -114,7 +114,7 @@ impl VulkanApp {
         );
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp {
+        VulkanApplication {
 
             _entry: entry,
             instance,
@@ -165,7 +165,7 @@ impl VulkanApp {
         };
 
         let result = physical_devices.iter().find(|physical_device| {
-            VulkanApp::is_physical_device_suitable(
+            VulkanApplication::is_physical_device_suitable(
                 instance,
                 **physical_device,
                 surface_stuff,
@@ -185,13 +185,13 @@ impl VulkanApp {
     ) -> bool {
         let _device_features = unsafe { instance.get_physical_device_features(physical_device) };
 
-        let indices = VulkanApp::find_queue_family(instance, physical_device, surface_stuff);
+        let indices = VulkanApplication::find_queue_family(instance, physical_device, surface_stuff);
 
         let is_queue_family_supported = indices.is_complete();
         let is_device_extension_supported =
-            VulkanApp::check_device_extension_support(instance, physical_device);
+            VulkanApplication::check_device_extension_support(instance, physical_device);
         let is_swapchain_supported = if is_device_extension_supported {
-            let swapchain_support = VulkanApp::query_swapchain_support(physical_device, surface_stuff);
+            let swapchain_support = VulkanApplication::query_swapchain_support(physical_device, surface_stuff);
             !swapchain_support.formats.is_empty() && !swapchain_support.present_modes.is_empty()
         } else {
             false
@@ -208,7 +208,7 @@ impl VulkanApp {
         validation: &ValidationInfo,
         surface_stuff: &SurfaceStuff,
     ) -> (ash::Device, QueueFamilyIndices) {
-        let indices = VulkanApp::find_queue_family(instance, physical_device, surface_stuff);
+        let indices = VulkanApplication::find_queue_family(instance, physical_device, surface_stuff);
 
         let mut unique_queue_families = HashSet::new();
         unique_queue_families.insert(indices.graphics_family.unwrap());
@@ -385,12 +385,12 @@ impl VulkanApp {
         surface_stuff: &SurfaceStuff,
         queue_family: &QueueFamilyIndices,
     ) -> SwapChainStuff {
-        let swapchain_support = VulkanApp::query_swapchain_support(physical_device, surface_stuff);
+        let swapchain_support = VulkanApplication::query_swapchain_support(physical_device, surface_stuff);
 
-        let surface_format = VulkanApp::choose_swapchain_format(&swapchain_support.formats);
+        let surface_format = VulkanApplication::choose_swapchain_format(&swapchain_support.formats);
         let present_mode =
-            VulkanApp::choose_swapchain_present_mode(&swapchain_support.present_modes);
-        let extent = VulkanApp::choose_swapchain_extent(&swapchain_support.capabilities);
+            VulkanApplication::choose_swapchain_present_mode(&swapchain_support.present_modes);
+        let extent = VulkanApplication::choose_swapchain_extent(&swapchain_support.capabilities);
 
         let image_count = swapchain_support.capabilities.min_image_count + 1;
         let image_count = if swapchain_support.capabilities.max_image_count > 0 {
@@ -511,7 +511,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             self.swapchain_loader
@@ -529,7 +529,7 @@ impl Drop for VulkanApp {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp {
+impl VulkanApplication {
     pub fn main_loop(mut self, event_loop: EventLoop<()>, window: winit::window::Window) {
 
          event_loop.run(move |event, _, control_flow| {
@@ -573,7 +573,7 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    let vulkan_app = VulkanApp::new(&window);
+    let vulkan_app = VulkanApplication::new(&window);
     vulkan_app.main_loop(event_loop, window);
 }
 // -------------------------------------------------------------------------------------------

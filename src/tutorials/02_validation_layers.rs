@@ -44,7 +44,7 @@ unsafe extern "system" fn vulkan_debug_utils_callback(
     vk::FALSE
 }
 
-struct VulkanApp {
+struct VulkanApplication {
 
     _entry: ash::Entry,
     instance: ash::Instance,
@@ -52,16 +52,16 @@ struct VulkanApp {
     debug_merssager: vk::DebugUtilsMessengerEXT,
 }
 
-impl VulkanApp {
-    pub fn new() -> VulkanApp {
+impl VulkanApplication {
+    pub fn new() -> VulkanApplication {
 
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
-        let instance = VulkanApp::create_instance(&entry);
-        let (debug_utils_loader, debug_merssager) = VulkanApp::setup_debug_utils(&entry, &instance);
+        let instance = VulkanApplication::create_instance(&entry);
+        let (debug_utils_loader, debug_merssager) = VulkanApplication::setup_debug_utils(&entry, &instance);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp {
+        VulkanApplication {
 
             _entry: entry,
             instance,
@@ -79,7 +79,7 @@ impl VulkanApp {
     }
 
     fn create_instance(entry: &ash::Entry) -> ash::Instance {
-        if VALIDATION.is_enable && VulkanApp::check_validation_layer_support(entry) == false {
+        if VALIDATION.is_enable && VulkanApplication::check_validation_layer_support(entry) == false {
             panic!("Validation layers requested, but not available!");
         }
 
@@ -261,7 +261,7 @@ fn populate_debug_messenger_create_info() -> vk::DebugUtilsMessengerCreateInfoEX
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             if VALIDATION.is_enable {
@@ -276,8 +276,8 @@ impl Drop for VulkanApp {
 fn main() {
 
     let event_loop = EventLoop::new();
-    let window = VulkanApp::init_window(&event_loop);
+    let window = VulkanApplication::init_window(&event_loop);
 
-    let vulkan_app = VulkanApp::new();
+    let vulkan_app = VulkanApplication::new();
     vulkan_app.main_loop(event_loop, window);
 }

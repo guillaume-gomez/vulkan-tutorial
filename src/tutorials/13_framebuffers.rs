@@ -16,7 +16,7 @@ use std::ptr;
 // Constants
 const WINDOW_TITLE: &'static str = "13.Framebuffers";
 
-struct VulkanApp {
+struct VulkanApplication {
 
     _entry: ash::Entry,
     instance: ash::Instance,
@@ -44,8 +44,8 @@ struct VulkanApp {
     graphics_pipeline: vk::Pipeline,
 }
 
-impl VulkanApp {
-    pub fn new(window: &winit::window::Window) -> VulkanApp {
+impl VulkanApplication {
+    pub fn new(window: &winit::window::Window) -> VulkanApplication {
        
         let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(
@@ -90,7 +90,7 @@ impl VulkanApp {
             render_pass,
             swapchain_stuff.swapchain_extent,
         );
-        let swapchain_framebuffers = VulkanApp::create_framebuffers(
+        let swapchain_framebuffers = VulkanApplication::create_framebuffers(
             &device,
             render_pass,
             &swapchain_imageviews,
@@ -98,7 +98,7 @@ impl VulkanApp {
         );
 
         // cleanup(); the 'drop' function will take care of it.
-         VulkanApp {
+         VulkanApplication {
             _entry: entry,
             instance,
             surface: surface_stuff.surface,
@@ -166,7 +166,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             for &framebuffer in self.swapchain_framebuffers.iter() {
@@ -197,7 +197,7 @@ impl Drop for VulkanApp {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp {
+impl VulkanApplication {
     pub fn main_loop(mut self, event_loop: EventLoop<()>, window: winit::window::Window) {
 
          event_loop.run(move |event, _, control_flow| {
@@ -241,7 +241,7 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    let vulkan_app = VulkanApp::new(&window);
+    let vulkan_app = VulkanApplication::new(&window);
     vulkan_app.main_loop(event_loop, window);
 }
 // -------------------------------------------------------------------------------------------

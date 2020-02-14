@@ -4,7 +4,7 @@ use vulkan_tutorial_rust::{
     utility::debug::*,
     utility::share,
     utility::structures::*,
-    utility::window::{ProgramProc, VulkanApp},
+    utility::window::{ProgramProc, VulkanApplication},
 };
 
 use ash::version::DeviceV1_0;
@@ -21,7 +21,7 @@ use std::ptr;
 const WINDOW_TITLE: &'static str = "24.Sampler";
 const TEXTURE_PATH: &'static str = "assets/texture.jpg";
 
-struct VulkanApp24 {
+struct VulkanApplication24 {
     window: winit::window::Window,
 
     // vulkan stuff
@@ -80,8 +80,8 @@ struct VulkanApp24 {
     is_framebuffer_resized: bool,
 }
 
-impl VulkanApp24 {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp24 {
+impl VulkanApplication24 {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApplication24 {
         let window =
             utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -127,7 +127,7 @@ impl VulkanApp24 {
         );
         let render_pass = share::v1::create_render_pass(&device, swapchain_stuff.swapchain_format);
         let ubo_layout = share::v1::create_descriptor_set_layout(&device);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp24::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication24::create_graphics_pipeline(
             &device,
             render_pass,
             swapchain_stuff.swapchain_extent,
@@ -140,15 +140,15 @@ impl VulkanApp24 {
             swapchain_stuff.swapchain_extent,
         );
         let command_pool = share::v1::create_command_pool(&device, &queue_family);
-        let (texture_image, texture_image_memory) = VulkanApp24::create_texture_image(
+        let (texture_image, texture_image_memory) = VulkanApplication24::create_texture_image(
             &device,
             command_pool,
             graphics_queue,
             &physical_device_memory_properties,
             &Path::new(TEXTURE_PATH),
         );
-        let texture_image_view = VulkanApp24::create_texture_image_view(&device, texture_image);
-        let texture_sampler = VulkanApp24::create_texture_sampler(&device);
+        let texture_image_view = VulkanApplication24::create_texture_image_view(&device, texture_image);
+        let texture_sampler = VulkanApplication24::create_texture_sampler(&device);
         let (vertex_buffer, vertex_buffer_memory) = share::v1::create_vertex_buffer(
             &device,
             &physical_device_memory_properties,
@@ -177,7 +177,7 @@ impl VulkanApp24 {
             &uniform_buffers,
             swapchain_stuff.swapchain_images.len(),
         );
-        let command_buffers = VulkanApp24::create_command_buffers(
+        let command_buffers = VulkanApplication24::create_command_buffers(
             &device,
             command_pool,
             graphics_pipeline,
@@ -192,7 +192,7 @@ impl VulkanApp24 {
         let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp24 {
+        VulkanApplication24 {
             // winit stuff
             window,
 
@@ -273,7 +273,7 @@ impl VulkanApp24 {
 
     fn create_texture_image_view(device: &ash::Device, texture_image: vk::Image) -> vk::ImageView {
         let texture_image_view =
-            VulkanApp24::create_image_view(device, texture_image, vk::Format::R8G8B8A8_UNORM);
+            VulkanApplication24::create_image_view(device, texture_image, vk::Format::R8G8B8A8_UNORM);
         texture_image_view
     }
 
@@ -443,7 +443,7 @@ impl VulkanApp24 {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp24 {
+impl VulkanApplication24 {
     fn create_command_buffers(
         device: &ash::Device,
         command_pool: vk::CommandPool,
@@ -793,7 +793,7 @@ impl VulkanApp24 {
     }
 }
 
-impl Drop for VulkanApp24 {
+impl Drop for VulkanApplication24 {
     fn drop(&mut self) {
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
@@ -845,7 +845,7 @@ impl Drop for VulkanApp24 {
     }
 }
 
-impl VulkanApp for VulkanApp24 {
+impl VulkanApplication for VulkanApplication24 {
     fn draw_frame(&mut self, delta_time: f32) {
         let wait_fences = [self.in_flight_fences[self.current_frame]];
 
@@ -976,7 +976,7 @@ impl VulkanApp for VulkanApp24 {
             &self.swapchain_images,
         );
         self.render_pass = share::v1::create_render_pass(&self.device, self.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp24::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication24::create_graphics_pipeline(
             &self.device,
             self.render_pass,
             swapchain_stuff.swapchain_extent,
@@ -991,7 +991,7 @@ impl VulkanApp for VulkanApp24 {
             &self.swapchain_imageviews,
             self.swapchain_extent,
         );
-        self.command_buffers = VulkanApp24::create_command_buffers(
+        self.command_buffers = VulkanApplication24::create_command_buffers(
             &self.device,
             self.command_pool,
             self.graphics_pipeline,
@@ -1043,7 +1043,7 @@ impl VulkanApp for VulkanApp24 {
 
 fn main() {
     let program_proc = ProgramProc::new();
-    let vulkan_app = VulkanApp24::new(&program_proc.event_loop);
+    let vulkan_app = VulkanApplication24::new(&program_proc.event_loop);
 
     program_proc.main_loop(vulkan_app);
 }

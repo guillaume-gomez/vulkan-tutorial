@@ -4,7 +4,7 @@ use vulkan_tutorial_rust::{
     utility::debug::*,
     utility::share,
     utility::structures::*,
-    utility::window::{ProgramProc, VulkanApp},
+    utility::window::{ProgramProc, VulkanApplication},
 };
 
 use ash::version::DeviceV1_0;
@@ -105,7 +105,7 @@ pub const RECT_TEX_COORD_VERTICES_DATA: [VertexV3; 8] = [
 
 pub const RECT_TEX_COORD_INDICES_DATA: [u32; 12] = [0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4];
 
-struct VulkanApp26 {
+struct VulkanApplication26 {
     window: winit::window::Window,
 
     // vulkan stuff
@@ -169,8 +169,8 @@ struct VulkanApp26 {
     is_framebuffer_resized: bool,
 }
 
-impl VulkanApp26 {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp26 {
+impl VulkanApplication26 {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApplication26 {
         let window =
             utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -214,14 +214,14 @@ impl VulkanApp26 {
             swapchain_stuff.swapchain_format,
             &swapchain_stuff.swapchain_images,
         );
-        let render_pass = VulkanApp26::create_render_pass(
+        let render_pass = VulkanApplication26::create_render_pass(
             &instance,
             &device,
             physical_device,
             swapchain_stuff.swapchain_format,
         );
         let ubo_layout = share::v2::create_descriptor_set_layout(&device);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp26::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication26::create_graphics_pipeline(
             &device,
             render_pass,
             swapchain_stuff.swapchain_extent,
@@ -229,7 +229,7 @@ impl VulkanApp26 {
         );
         let command_pool = share::v1::create_command_pool(&device, &queue_family);
         let (depth_image, depth_image_view, depth_image_memory) =
-            VulkanApp26::create_depth_resources(
+            VulkanApplication26::create_depth_resources(
                 &instance,
                 &device,
                 physical_device,
@@ -238,7 +238,7 @@ impl VulkanApp26 {
                 swapchain_stuff.swapchain_extent,
                 &physical_device_memory_properties,
             );
-        let swapchain_framebuffers = VulkanApp26::create_framebuffers(
+        let swapchain_framebuffers = VulkanApplication26::create_framebuffers(
             &device,
             render_pass,
             &swapchain_imageviews,
@@ -284,7 +284,7 @@ impl VulkanApp26 {
             texture_sampler,
             swapchain_stuff.swapchain_images.len(),
         );
-        let command_buffers = VulkanApp26::create_command_buffers(
+        let command_buffers = VulkanApplication26::create_command_buffers(
             &device,
             command_pool,
             graphics_pipeline,
@@ -299,7 +299,7 @@ impl VulkanApp26 {
         let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp26 {
+        VulkanApplication26 {
             // winit stuff
             window,
 
@@ -392,7 +392,7 @@ impl VulkanApp26 {
         swapchain_extent: vk::Extent2D,
         device_memory_properties: &vk::PhysicalDeviceMemoryProperties,
     ) -> (vk::Image, vk::ImageView, vk::DeviceMemory) {
-        let depth_format = VulkanApp26::find_depth_format(instance, physical_device);
+        let depth_format = VulkanApplication26::find_depth_format(instance, physical_device);
         let (depth_image, depth_image_memory) = share::v1::create_image(
             device,
             swapchain_extent.width,
@@ -413,7 +413,7 @@ impl VulkanApp26 {
             1,
         );
 
-        VulkanApp26::transition_image_layout(
+        VulkanApplication26::transition_image_layout(
             device,
             command_pool,
             submit_queue,
@@ -430,7 +430,7 @@ impl VulkanApp26 {
         instance: &ash::Instance,
         physical_device: vk::PhysicalDevice,
     ) -> vk::Format {
-        VulkanApp26::find_supported_format(
+        VulkanApplication26::find_supported_format(
             instance,
             physical_device,
             &[
@@ -510,7 +510,7 @@ impl VulkanApp26 {
         }
 
         let aspect_mask = if new_layout == vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL {
-            if VulkanApp26::has_stencil_component(format) {
+            if VulkanApplication26::has_stencil_component(format) {
                 vk::ImageAspectFlags::DEPTH | vk::ImageAspectFlags::STENCIL
             } else {
                 vk::ImageAspectFlags::DEPTH
@@ -577,7 +577,7 @@ impl VulkanApp26 {
 
         let depth_attachment = vk::AttachmentDescription {
             flags: vk::AttachmentDescriptionFlags::empty(),
-            format: VulkanApp26::find_depth_format(instance, physcial_device),
+            format: VulkanApplication26::find_depth_format(instance, physcial_device),
             samples: vk::SampleCountFlags::TYPE_1,
             load_op: vk::AttachmentLoadOp::CLEAR,
             store_op: vk::AttachmentStoreOp::DONT_CARE,
@@ -897,7 +897,7 @@ impl VulkanApp26 {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp26 {
+impl VulkanApplication26 {
     fn create_command_buffers(
         device: &ash::Device,
         command_pool: vk::CommandPool,
@@ -1043,7 +1043,7 @@ impl VulkanApp26 {
     }
 }
 
-impl Drop for VulkanApp26 {
+impl Drop for VulkanApplication26 {
     fn drop(&mut self) {
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
@@ -1095,7 +1095,7 @@ impl Drop for VulkanApp26 {
     }
 }
 
-impl VulkanApp for VulkanApp26 {
+impl VulkanApplication for VulkanApplication26 {
     fn draw_frame(&mut self, delta_time: f32) {
         let wait_fences = [self.in_flight_fences[self.current_frame]];
 
@@ -1225,13 +1225,13 @@ impl VulkanApp for VulkanApp26 {
             self.swapchain_format,
             &self.swapchain_images,
         );
-        self.render_pass = VulkanApp26::create_render_pass(
+        self.render_pass = VulkanApplication26::create_render_pass(
             &self.instance,
             &self.device,
             self.physical_device,
             self.swapchain_format,
         );
-        let (graphics_pipeline, pipeline_layout) = VulkanApp26::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication26::create_graphics_pipeline(
             &self.device,
             self.render_pass,
             swapchain_stuff.swapchain_extent,
@@ -1240,7 +1240,7 @@ impl VulkanApp for VulkanApp26 {
         self.graphics_pipeline = graphics_pipeline;
         self.pipeline_layout = pipeline_layout;
 
-        let depth_resources = VulkanApp26::create_depth_resources(
+        let depth_resources = VulkanApplication26::create_depth_resources(
             &self.instance,
             &self.device,
             self.physical_device,
@@ -1253,14 +1253,14 @@ impl VulkanApp for VulkanApp26 {
         self.depth_image_view = depth_resources.1;
         self.depth_image_memory = depth_resources.2;
 
-        self.swapchain_framebuffers = VulkanApp26::create_framebuffers(
+        self.swapchain_framebuffers = VulkanApplication26::create_framebuffers(
             &self.device,
             self.render_pass,
             &self.swapchain_imageviews,
             self.depth_image_view,
             self.swapchain_extent,
         );
-        self.command_buffers = VulkanApp26::create_command_buffers(
+        self.command_buffers = VulkanApplication26::create_command_buffers(
             &self.device,
             self.command_pool,
             self.graphics_pipeline,
@@ -1316,7 +1316,7 @@ impl VulkanApp for VulkanApp26 {
 
 fn main() {
     let program_proc = ProgramProc::new();
-    let vulkan_app = VulkanApp26::new(&program_proc.event_loop);
+    let vulkan_app = VulkanApplication26::new(&program_proc.event_loop);
 
     program_proc.main_loop(vulkan_app);
 }

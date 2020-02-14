@@ -28,7 +28,7 @@ impl QueueFamilyIndices {
     }
 }
 
-struct VulkanApp {
+struct VulkanApplication {
     _entry: ash::Entry,
     instance: ash::Instance,
     debug_utils_loader: ash::extensions::ext::DebugUtils,
@@ -38,8 +38,8 @@ struct VulkanApp {
     _graphics_queue: vk::Queue,
 }
 
-impl VulkanApp {
-    pub fn new() -> VulkanApp {
+impl VulkanApplication {
+    pub fn new() -> VulkanApplication {
         // init vulkan stuff
         let entry = ash::Entry::new().unwrap();
         let instance = share::create_instance(
@@ -50,12 +50,12 @@ impl VulkanApp {
         );
         let (debug_utils_loader, debug_merssager) =
             utility::debug::setup_debug_utils(VALIDATION.is_enable, &entry, &instance);
-        let physical_device = VulkanApp::pick_physical_device(&instance);
+        let physical_device = VulkanApplication::pick_physical_device(&instance);
         let (logical_device, graphics_queue) =
-            VulkanApp::create_logical_device(&instance, physical_device, &VALIDATION);
+            VulkanApplication::create_logical_device(&instance, physical_device, &VALIDATION);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp {
+        VulkanApplication {
             _entry: entry,
             instance,
             debug_utils_loader,
@@ -74,7 +74,7 @@ impl VulkanApp {
         };
 
         let result = physical_devices.iter().find(|physical_device| {
-            VulkanApp::is_physical_device_suitable(instance, **physical_device)
+            VulkanApplication::is_physical_device_suitable(instance, **physical_device)
         });
 
         match result {
@@ -91,7 +91,7 @@ impl VulkanApp {
             unsafe { instance.get_physical_device_properties(physical_device) };
         let _device_features = unsafe { instance.get_physical_device_features(physical_device) };
 
-        let indices = VulkanApp::find_queue_family(instance, physical_device);
+        let indices = VulkanApplication::find_queue_family(instance, physical_device);
 
         return indices.is_complete();
     }
@@ -101,7 +101,7 @@ impl VulkanApp {
         physical_device: vk::PhysicalDevice,
         validation: &ValidationInfo,
     ) -> (ash::Device, vk::Queue) {
-        let indices = VulkanApp::find_queue_family(instance, physical_device);
+        let indices = VulkanApplication::find_queue_family(instance, physical_device);
 
         let queue_priorities = [1.0_f32];
         let queue_create_info = vk::DeviceQueueCreateInfo {
@@ -193,7 +193,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             self.device.destroy_device(None);
@@ -208,7 +208,7 @@ impl Drop for VulkanApp {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp {
+impl VulkanApplication {
     pub fn main_loop(mut self, event_loop: EventLoop<()>, window: winit::window::Window) {
 
          event_loop.run(move |event, _, control_flow| {
@@ -252,7 +252,7 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    let vulkan_app = VulkanApp::new();
+    let vulkan_app = VulkanApplication::new();
     vulkan_app.main_loop(event_loop, window);
 }
 // -------------------------------------------------------------------------------------------

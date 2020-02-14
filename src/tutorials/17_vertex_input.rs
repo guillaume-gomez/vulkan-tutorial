@@ -67,7 +67,7 @@ const _VERTICES_DATA: [Vertex; 3] = [
     },
 ];
 
-struct VulkanApp {
+struct VulkanApplication {
     window: winit::window::Window,
 
     // vulkan stuff
@@ -108,8 +108,8 @@ struct VulkanApp {
     is_framebuffer_resized: bool,
 }
 
-impl VulkanApp {
-    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApp {
+impl VulkanApplication {
+    pub fn new(event_loop: &winit::event_loop::EventLoop<()>) -> VulkanApplication {
 
         let window = utility::window::init_window(event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -152,7 +152,7 @@ impl VulkanApp {
             &swapchain_stuff.swapchain_images,
         );
         let render_pass = share::v1::create_render_pass(&device, swapchain_stuff.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication::create_graphics_pipeline(
             &device,
             render_pass,
             swapchain_stuff.swapchain_extent,
@@ -175,7 +175,7 @@ impl VulkanApp {
         let sync_ojbects = share::v1::create_sync_objects(&device, MAX_FRAMES_IN_FLIGHT);
 
         // cleanup(); the 'drop' function will take care of it.
-        VulkanApp {
+        VulkanApplication {
             // winit stuff
             window,
 
@@ -434,7 +434,7 @@ impl VulkanApp {
 }
 
 // Fix content -------------------------------------------------------------------------------
-impl VulkanApp {
+impl VulkanApplication {
     fn draw_frame(&mut self) {
         let wait_fences = [self.in_flight_fences[self.current_frame]];
 
@@ -562,7 +562,7 @@ impl VulkanApp {
             &self.swapchain_images,
         );
         self.render_pass = share::v1::create_render_pass(&self.device, self.swapchain_format);
-        let (graphics_pipeline, pipeline_layout) = VulkanApp::create_graphics_pipeline(
+        let (graphics_pipeline, pipeline_layout) = VulkanApplication::create_graphics_pipeline(
             &self.device,
             self.render_pass,
             swapchain_stuff.swapchain_extent,
@@ -606,7 +606,7 @@ impl VulkanApp {
     }
 }
 
-impl Drop for VulkanApp {
+impl Drop for VulkanApplication {
     fn drop(&mut self) {
         unsafe {
             for i in 0..MAX_FRAMES_IN_FLIGHT {
@@ -633,7 +633,7 @@ impl Drop for VulkanApp {
     }
 }
 
-impl VulkanApp {
+impl VulkanApplication {
 
     pub fn main_loop(mut self, event_loop: EventLoop<()>) {
 
@@ -683,7 +683,7 @@ fn main() {
 
     let event_loop = EventLoop::new();
 
-    let vulkan_app = VulkanApp::new(&event_loop);
+    let vulkan_app = VulkanApplication::new(&event_loop);
     vulkan_app.main_loop(event_loop);
 }
 // -------------------------------------------------------------------------------------------
