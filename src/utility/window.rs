@@ -18,7 +18,7 @@ pub fn init_window(
         .expect("Failed to create window.")
 }
 
-pub trait VulkanApp {
+pub trait VulkanApplication {
     fn draw_frame(&mut self, delta_time: f32);
     fn recreate_swapchain(&mut self);
     fn cleanup_swapchain(&self);
@@ -40,7 +40,7 @@ impl ProgramProc {
         ProgramProc { event_loop }
     }
 
-    pub fn main_loop<A: 'static + VulkanApp>(self, mut vulkan_app: A) {
+    pub fn main_loop<A: 'static + VulkanApplication>(self, mut vulkan_app: A) {
 
         let mut tick_counter = super::fps_limiter::FPSLimiter::new();
 

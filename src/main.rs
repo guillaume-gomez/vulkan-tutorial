@@ -1,5 +1,5 @@
 use vulkan_tutorial::{
-    utility, // the mod define some fixed functions that have been learned before.
+    utility,
     utility::constants::WINDOW_TITLE,
     utility::constants::WINDOW_WIDTH,
     utility::constants::WINDOW_HEIGHT,

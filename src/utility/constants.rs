@@ -10,7 +10,7 @@ pub const API_VERSION: u32 = vk_make_version!(1, 0, 92);
 
 pub const WINDOW_WIDTH: u32 = 800;
 pub const WINDOW_HEIGHT: u32 = 600;
-pub const WINDOW_TITLE: &'static str = "03";
+pub const WINDOW_TITLE: &'static str = "03 physical device selected";
 pub const VALIDATION: ValidationInfo = ValidationInfo {
     is_enable: true,
     required_validation_layers: ["VK_LAYER_LUNARG_standard_validation"],
