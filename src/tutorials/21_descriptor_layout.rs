@@ -4,7 +4,7 @@ use vulkan_tutorial_rust::{
     utility::debug::*,
     utility::share,
     utility::structures::*,
-    utility::window::{ProgramProc, VulkanApplication},
+    utility::window::{ProgramProc, VulkanApplicationBase},
 };
 
 use ash::version::DeviceV1_0;
@@ -661,7 +661,7 @@ impl Drop for VulkanApplication21 {
     }
 }
 
-impl VulkanApplication for VulkanApplication21 {
+impl VulkanApplicationBase for VulkanApplication21 {
     fn draw_frame(&mut self, delta_time: f32) {
         let wait_fences = [self.in_flight_fences[self.current_frame]];
 
