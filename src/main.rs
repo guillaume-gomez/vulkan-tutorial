@@ -1,20 +1,13 @@
 use vulkan_tutorial::{
-    utility,
-    utility::constants::WINDOW_TITLE,
-    utility::constants::WINDOW_WIDTH,
-    utility::constants::WINDOW_HEIGHT,
+    utility::window::{ProgramProc}
 };
-
-use winit::event_loop::{EventLoop};
-
 
 mod vulkan_application;
 use vulkan_application::VulkanApplication;
 
 fn main() {
-    let event_loop = EventLoop::new();
-    let window = utility::window::init_window(&event_loop, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
+    let program_proc = ProgramProc::new();
+    let vulkan_app = VulkanApplication::new(&program_proc.event_loop);
 
-    let vulkan_app = VulkanApplication::new();
-    vulkan_app.main_loop(event_loop, window);
+    program_proc.main_loop(vulkan_app);
 }
