@@ -368,10 +368,10 @@ impl VulkanApplication {
                     .begin_command_buffer(command_buffer, &command_buffer_begin_info)
                     .expect("Failed to begin recording Command Buffer at beginning!");
             }
-
+            let background_color = [0.0, 0.0, 0.0, 1.0];
             let clear_values = [vk::ClearValue {
                 color: vk::ClearColorValue {
-                    float32: [0.0, 1.0, 0.0, 1.0],
+                    float32: background_color,
                 },
             }];
 
